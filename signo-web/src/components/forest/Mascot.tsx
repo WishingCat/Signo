@@ -126,7 +126,7 @@ function Squirrel() {
       <circle cx="66" cy="46" r="1.8" fill="#2b241e" stroke="none" />
       <path d="M57 52 Q 59 54 61 52" />
       {/* 橡果 */}
-      <ellipse cx="60" cy="78" rx="7" ry="8" fill="#c77f44" stroke="#4a3a2c" />
+      <ellipse cx="60" cy="78" rx="7" ry="8" fill="#a0734a" stroke="#4a3a2c" />
       <rect x="54" y="70" width="12" height="4" rx="2" fill="#4a3a2c" stroke="none" />
       <path d="M60 68 L 60 64" />
     </g>

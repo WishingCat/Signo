@@ -7,22 +7,18 @@ import { Mascot, TIER_MASCOT, MASCOT_LABEL } from '@/components/forest/Mascot'
 import { StreakFlame } from '@/components/forest/StreakFlame'
 import { getSessionUser } from '@/lib/auth/session'
 import { getUserProgress } from '@/lib/progress/service'
-import { getUserBadges, getAllBadges } from '@/lib/badges/service'
 import { listFriends } from '@/lib/social/service'
 
 export default async function MePage() {
   const user = await getSessionUser()
   if (!user) redirect('/login')
 
-  const [progress, earnedBadges, allBadges, friends] = await Promise.all([
+  const [progress, friends] = await Promise.all([
     getUserProgress(user.id),
-    getUserBadges(user.id),
-    getAllBadges(),
     listFriends(user.id),
   ])
 
   const mascot = TIER_MASCOT[Math.min(Math.max(progress.tier, 1), 7)]
-  const earnedSlugs = new Set(earnedBadges.map((b) => b.slug))
 
   return (
     <div className="py-6 space-y-5 bloom-in">
@@ -60,33 +56,6 @@ export default async function MePage() {
           <Stat label="通关" value={progress.lessonsClearedTotal.toString()} unit="次" />
         </div>
       </Card>
-
-      <Section
-        title="徽章"
-        hint={`${earnedBadges.length} / ${allBadges.length}`}
-        href="/badges"
-        hrefLabel="全部徽章 →"
-      >
-        <Card density="tight">
-          <div className="flex items-center justify-around">
-            {allBadges.map((b) => {
-              const got = earnedSlugs.has(b.slug)
-              return (
-                <div
-                  key={b.id}
-                  title={b.title}
-                  className={`flex flex-col items-center ${got ? '' : 'opacity-30 grayscale'}`}
-                >
-                  <span className="text-[28px] leading-none">{b.emoji}</span>
-                  <span className="text-[10px] text-bark/55 mt-1 truncate max-w-[64px] text-center">
-                    {b.title}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </Card>
-      </Section>
 
       <Section
         title="林友"

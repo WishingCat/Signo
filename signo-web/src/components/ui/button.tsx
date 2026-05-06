@@ -12,9 +12,9 @@ const base =
 
 const variants: Record<Variant, string> = {
   primary:
-    'bg-hazel text-cream shadow-[0_4px_0_rgba(74,58,44,0.18),0_8px_14px_-6px_rgba(199,127,68,0.45)] ' +
-    'hover:-translate-y-[1px] hover:shadow-[0_6px_0_rgba(74,58,44,0.18),0_12px_20px_-8px_rgba(199,127,68,0.55)] ' +
-    'active:translate-y-[2px] active:shadow-[0_2px_0_rgba(74,58,44,0.18),0_4px_8px_-4px_rgba(199,127,68,0.4)]',
+    'bg-hazel text-cream shadow-[0_4px_0_rgba(74,58,44,0.18),0_8px_14px_-6px_rgba(126,162,85,0.45)] ' +
+    'hover:-translate-y-[1px] hover:shadow-[0_6px_0_rgba(74,58,44,0.18),0_12px_20px_-8px_rgba(126,162,85,0.55)] ' +
+    'active:translate-y-[2px] active:shadow-[0_2px_0_rgba(74,58,44,0.18),0_4px_8px_-4px_rgba(126,162,85,0.4)]',
   secondary:
     'bg-moss text-cream shadow-[0_4px_0_rgba(74,58,44,0.16),0_8px_14px_-6px_rgba(95,125,79,0.45)] ' +
     'hover:-translate-y-[1px] active:translate-y-[2px]',

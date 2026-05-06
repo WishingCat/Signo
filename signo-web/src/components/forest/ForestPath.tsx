@@ -150,7 +150,7 @@ function LessonNode({
           className="absolute inset-0 -m-2 rounded-full pointer-events-none"
           style={{
             background:
-              'radial-gradient(circle, rgba(199,127,68,0.4) 0%, rgba(199,127,68,0) 70%)',
+              'radial-gradient(circle, rgba(126,162,85,0.4) 0%, rgba(126,162,85,0) 70%)',
             animation: 'firefly-pulse 2.6s ease-in-out infinite',
           }}
           aria-hidden
@@ -162,7 +162,7 @@ function LessonNode({
           state === 'cleared' &&
             'bg-cream border-[2.5px] border-moss shadow-[0_4px_12px_-4px_rgba(95,125,79,0.45)]',
           state === 'current' &&
-            'bg-cream border-[2.5px] border-hazel shadow-[0_6px_14px_-4px_rgba(199,127,68,0.5)]',
+            'bg-cream border-[2.5px] border-hazel shadow-[0_6px_14px_-4px_rgba(126,162,85,0.5)]',
           state === 'future' &&
             'paper border-2 border-bark/15',
         )}

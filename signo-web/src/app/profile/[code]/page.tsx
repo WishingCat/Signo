@@ -52,27 +52,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ code: 
         </div>
       </Card>
 
-      <div>
-        <h2 className="text-[13px] text-bark/70 mb-2">徽章收藏 ({profile.badges.length})</h2>
-        {profile.badges.length === 0 ? (
-          <Card density="tight" className="text-center text-[13px] text-bark/55 py-6">
-            还没有采到任何徽章。
-          </Card>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {profile.badges.map((b) => (
-              <span
-                key={b.slug}
-                className="inline-flex items-center gap-1.5 rounded-full bg-hazel/12 border border-hazel/40 px-3 py-1.5"
-              >
-                <span className="text-[16px]">{b.emoji}</span>
-                <span className="text-[13px] text-ink">{b.title}</span>
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
       <div className="flex gap-2 pt-2">
         {isSelf ? (
           <a href="/friends" className="flex-1">

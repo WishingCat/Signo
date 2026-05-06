@@ -20,7 +20,7 @@ export function StreakFlame({ days, className, large = false }: Props) {
           large ? 'h-10 w-10' : 'h-5 w-5',
           lit ? 'text-hazel' : 'text-bark/25',
         )}
-        style={lit ? { filter: 'drop-shadow(0 0 6px rgba(199,127,68,0.4))' } : undefined}
+        style={lit ? { filter: 'drop-shadow(0 0 6px rgba(126,162,85,0.4))' } : undefined}
         aria-hidden
       >
         <path

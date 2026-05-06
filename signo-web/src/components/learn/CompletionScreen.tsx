@@ -75,26 +75,6 @@ export function CompletionScreen({
           <Stat label="获得" value={`+${result.xp} XP`} accent testId="xp-gain" />
           <Stat label="连胜" value={`${result.streak.currentStreak} 天`} />
         </div>
-        {result.badgesEarned && result.badgesEarned.length > 0 && (
-          <div className="mt-2 mb-4 pt-4 border-t border-dashed border-bark/15">
-            <p className="text-center text-[11px] tracking-[0.2em] uppercase text-bark/50 mb-2">new badge</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {result.badgesEarned.map((b, i) => (
-                <div
-                  key={b.slug}
-                  className="flex items-center gap-2 rounded-full bg-hazel/15 border border-hazel/40 px-3 py-1.5"
-                  style={{ animation: `bloom-in 600ms ${i * 150}ms both` }}
-                >
-                  <span className="text-[18px]">{b.emoji}</span>
-                  <div className="leading-tight">
-                    <div className="text-[13px] font-medium text-ink">{b.title}</div>
-                    <div className="text-[10px] text-bark/60">{b.description}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
         <Button size="lg" className="w-full" onClick={onBack}>{backLabel}</Button>
       </Card>
     </div>

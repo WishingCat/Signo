@@ -97,7 +97,7 @@ function PebbleProgress({ total, completed, current }: { total: number; complete
             className={cn(
               'transition-all duration-300',
               state === 'done' && 'h-2.5 w-2.5 rounded-full bg-moss',
-              state === 'now' && 'h-3 w-8 rounded-full bg-hazel shadow-[0_0_0_4px_rgba(199,127,68,0.15)]',
+              state === 'now' && 'h-3 w-8 rounded-full bg-hazel shadow-[0_0_0_4px_rgba(126,162,85,0.15)]',
               state === 'todo' && 'h-2.5 w-2.5 rounded-full bg-bark/15',
             )}
           />

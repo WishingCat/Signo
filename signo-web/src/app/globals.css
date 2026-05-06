@@ -13,7 +13,7 @@
   --color-vellum: #efe6cd;
   --color-moss: #5f7d4f;
   --color-sage: #8fa67f;
-  --color-hazel: #c77f44;
+  --color-hazel: #7ea255;
   --color-mist: #9cbac9;
   --color-ochre: #b7573f;
   --color-bark: #4a3a2c;
@@ -51,7 +51,7 @@ body {
   font-feature-settings: "palt", "kern";
   background-image:
     radial-gradient(1400px 900px at 10% -10%, rgba(143, 166, 127, 0.18), transparent 60%),
-    radial-gradient(1200px 800px at 100% 20%, rgba(199, 127, 68, 0.10), transparent 55%),
+    radial-gradient(1200px 800px at 100% 20%, rgba(126, 162, 85, 0.10), transparent 55%),
     radial-gradient(1000px 700px at 40% 110%, rgba(156, 186, 201, 0.16), transparent 60%),
     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.29 0 0 0 0 0.23 0 0 0 0 0.17 0 0 0 0.08 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
   background-attachment: fixed, fixed, fixed, fixed;

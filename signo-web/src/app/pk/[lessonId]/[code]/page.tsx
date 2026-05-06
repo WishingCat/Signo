@@ -95,7 +95,7 @@ function PlayerSide({
       className={cn(
         'rounded-[14px] p-4 text-center transition-all',
         wins
-          ? 'bg-hazel/12 border-2 border-hazel shadow-[0_0_0_4px_rgba(199,127,68,0.15)]'
+          ? 'bg-hazel/12 border-2 border-hazel shadow-[0_0_0_4px_rgba(126,162,85,0.15)]'
           : 'bg-cream border border-bark/10',
       )}
     >
