@@ -1,0 +1,104 @@
+// Prisma schema for Signo W1 (minimal subset)
+// See plan §Task 2 and spec §Prisma
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String        @id @default(cuid())
+  username     String        @unique
+  passwordHash String
+  nickname     String
+  friendCode   String        @unique
+  avatarSeed   String        @default("default")
+  role         String        @default("user") // user | admin
+  tier         Int           @default(1)      // 1..7 森林段位（L1 小蚂蚁 → L7 麋鹿神）
+  pkScore      Int           @default(1000)
+  pkWins       Int           @default(0)
+  pkLosses     Int           @default(0)
+  createdAt    DateTime      @default(now())
+  attempts     Attempt[]
+  clears       LessonClear[]
+  daily        DailyStat[]
+}
+
+model Unit {
+  id          String   @id @default(cuid())
+  order       Int
+  title       String
+  description String
+  iconKey     String
+  lessons     Lesson[]
+}
+
+model Lesson {
+  id        String        @id @default(cuid())
+  unitId    String
+  order     Int
+  title     String
+  unit      Unit          @relation(fields: [unitId], references: [id])
+  questions Question[]
+  clears    LessonClear[]
+}
+
+model Question {
+  id            String    @id @default(cuid())
+  lessonId      String
+  order         Int
+  type          String // sign2word | word2sign
+  promptText    String?
+  promptMediaId String?
+  promptMedia   Media?    @relation(fields: [promptMediaId], references: [id])
+  choicesJson   String // JSON string array
+  answerIndex   Int
+  explanation   String?
+  lesson        Lesson    @relation(fields: [lessonId], references: [id])
+  attempts      Attempt[]
+}
+
+model Media {
+  id         String     @id @default(cuid())
+  kind       String // image | video
+  path       String // served under /signs/... for images
+  durationMs Int?
+  signer     String?
+  license    String?
+  questions  Question[]
+}
+
+model Attempt {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  isCorrect  Boolean
+  answeredAt DateTime @default(now())
+  msSpent    Int
+  user       User     @relation(fields: [userId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id])
+}
+
+model LessonClear {
+  id        String   @id @default(cuid())
+  userId    String
+  lessonId  String
+  clearedAt DateTime @default(now())
+  stars     Int
+  user      User     @relation(fields: [userId], references: [id])
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+}
+
+model DailyStat {
+  userId         String
+  date           String // YYYY-MM-DD
+  xp             Int    @default(0)
+  lessonsCleared Int    @default(0)
+  user           User   @relation(fields: [userId], references: [id])
+
+  @@id([userId, date])
+}

@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# editor
+.idea/
+.vscode/
+*.swp
+
+# env (each subproject may have its own as well)
+.env
+.env.local
+.env.*.local
