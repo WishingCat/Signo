@@ -2,36 +2,25 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getLessonTree } from '@/lib/curriculum/service'
 import { getSessionUser } from '@/lib/auth/session'
-import { getUserProgress } from '@/lib/progress/service'
-import { Mascot, TIER_MASCOT, MASCOT_LABEL } from '@/components/forest/Mascot'
-import { SketchDivider } from '@/components/forest/SketchDivider'
+import { getLessonProgressMap } from '@/lib/progress/service'
+import { Mascot } from '@/components/forest/Mascot'
 import { Leaf } from '@/components/forest/Leaf'
-import { UnitClearing } from '@/components/home/UnitClearing'
+import { ForestPath } from '@/components/forest/ForestPath'
 
 export default async function Home() {
   const [tree, user] = await Promise.all([getLessonTree(), getSessionUser()])
-  const progress = user ? await getUserProgress(user.id) : null
+  const progress = user ? await getLessonProgressMap(user.id) : {}
 
   return (
     <div className="py-6 space-y-5 bloom-in">
-      {user && progress ? (
-        <>
-          <Dashboard nickname={user.nickname} progress={progress} />
-          <QuickActions />
-        </>
-      ) : (
-        <GuestInvite />
-      )}
+      {user ? <QuickActions /> : <GuestInvite />}
+
+      <PathHeading />
 
       {tree.length === 0 ? (
         <Card><p className="text-bark/70">森林里还没有课程，稍后再来。</p></Card>
       ) : (
-        <div className="space-y-7 relative">
-          <div className="absolute left-[22px] top-6 bottom-6 border-l-2 border-dashed border-bark/15 pointer-events-none" aria-hidden />
-          {tree.map((node, i) => (
-            <UnitClearing key={node.unit.id} index={i} unit={node.unit} lessons={node.lessons} />
-          ))}
-        </div>
+        <ForestPath units={tree} progress={progress} />
       )}
 
       <FooterNote />
@@ -39,53 +28,11 @@ export default async function Home() {
   )
 }
 
-function Dashboard({
-  nickname,
-  progress,
-}: {
-  nickname: string
-  progress: Awaited<ReturnType<typeof getUserProgress>>
-}) {
-  const name = TIER_MASCOT[Math.min(Math.max(progress.tier, 1), 7)]
+function PathHeading() {
   return (
-    <Card tilt="left" tape density="cozy" className="mx-1">
-      <div className="flex items-center gap-4">
-        <div className="relative shrink-0">
-          <span
-            className="absolute inset-0 rounded-full -z-0"
-            style={{ background: 'radial-gradient(circle, rgba(143,166,127,0.35) 0%, transparent 70%)' }}
-          />
-          <Mascot name={name} className="h-16 w-16 text-bark relative" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] text-bark/60">清晨好，</p>
-          <h2 className="brush-text text-[22px] leading-tight truncate">{nickname}</h2>
-          <p className="text-[12px] text-bark/55 mt-0.5">
-            你是一只<span className="text-moss font-medium mx-0.5">{MASCOT_LABEL[name]}</span>
-            · L{progress.tier}
-          </p>
-        </div>
-      </div>
-
-      <SketchDivider className="my-4" />
-
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <Metric label="今日" value={`+${progress.todayXp}`} hint="XP" accent />
-        <Metric label="累计" value={progress.totalXp.toString()} hint="XP" />
-        <Metric label="连胜" value={progress.currentStreak.toString()} hint={progress.currentStreak > 0 ? '天' : '等你'} />
-      </div>
-    </Card>
-  )
-}
-
-function Metric({ label, value, hint, accent = false }: { label: string; value: string; hint: string; accent?: boolean }) {
-  return (
-    <div className="rounded-[12px] bg-oat/50 border border-bark/10 px-2 py-3">
-      <div className="text-[10px] tracking-[0.2em] uppercase text-bark/50">{label}</div>
-      <div className={`mt-1 leading-none tabular-nums font-medium ${accent ? 'text-[22px] text-hazel' : 'text-[20px] text-ink'}`}>
-        {value}
-      </div>
-      <div className="text-[10px] text-bark/45 mt-1">{hint}</div>
+    <div className="text-center pt-2">
+      <h2 className="brush-text text-[20px]">森林之路</h2>
+      <p className="text-[12px] text-bark/55 mt-0.5">点亮一只小动物，就是踏上一段新路</p>
     </div>
   )
 }
@@ -103,7 +50,7 @@ function ActionTile({
   href, accent, title, hint, icon,
 }: {
   href: string
-  accent: 'ochre' | 'moss' | 'hazel' | 'mist'
+  accent: 'ochre' | 'moss'
   title: string
   hint: string
   icon: React.ReactNode
@@ -111,8 +58,6 @@ function ActionTile({
   const color: Record<typeof accent, string> = {
     ochre: 'bg-ochre/15 text-ochre',
     moss: 'bg-moss/15 text-moss',
-    hazel: 'bg-hazel/15 text-hazel',
-    mist: 'bg-mist/25 text-ink',
   }
   return (
     <a href={href} className="group">
@@ -124,26 +69,6 @@ function ActionTile({
         </div>
       </Card>
     </a>
-  )
-}
-
-function IconBook() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
-      <path d="M4 4 L 20 4 L 20 20 L 4 20 Z M 4 9 L 20 9" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="7" cy="6.5" r="0.8" />
-      <path d="M8 12 L 16 12 M 8 15 L 14 15" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-    </svg>
-  )
-}
-function IconRefresh() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
-      <path d="M4 12 a 8 8 0 0 1 14 -5" />
-      <path d="M20 12 a 8 8 0 0 1 -14 5" />
-      <path d="M18 4 L 18 7 L 15 7" />
-      <path d="M6 20 L 6 17 L 9 17" />
-    </svg>
   )
 }
 
@@ -180,5 +105,26 @@ function FooterNote() {
       </div>
       <p className="text-[11px] tracking-[0.3em] uppercase text-bark/50">the forest speaks without sound</p>
     </div>
+  )
+}
+
+function IconBook() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
+      <path d="M4 4 L 20 4 L 20 20 L 4 20 Z M 4 9 L 20 9" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="7" cy="6.5" r="0.8" />
+      <path d="M8 12 L 16 12 M 8 15 L 14 15" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconRefresh() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+      <path d="M4 12 a 8 8 0 0 1 14 -5" />
+      <path d="M20 12 a 8 8 0 0 1 -14 5" />
+      <path d="M18 4 L 18 7 L 15 7" />
+      <path d="M6 20 L 6 17 L 9 17" />
+    </svg>
   )
 }

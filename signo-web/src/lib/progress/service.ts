@@ -175,6 +175,24 @@ export async function getUserProgress(userId: string): Promise<UserProgressSumma
   }
 }
 
+export type LessonProgressMap = Record<string, { stars: number; clearedAt: Date }>
+
+/** 用户每关最佳通关记录（按星级取最高，stars 相同则取最早一次） */
+export async function getLessonProgressMap(userId: string): Promise<LessonProgressMap> {
+  const clears = await prisma.lessonClear.findMany({
+    where: { userId },
+    orderBy: [{ lessonId: 'asc' }, { stars: 'desc' }, { clearedAt: 'asc' }],
+    select: { lessonId: true, stars: true, clearedAt: true },
+  })
+  const map: LessonProgressMap = {}
+  for (const c of clears) {
+    if (!map[c.lessonId]) {
+      map[c.lessonId] = { stars: c.stars, clearedAt: c.clearedAt }
+    }
+  }
+  return map
+}
+
 export type LeaderRow = {
   rank: number
   userId: string
