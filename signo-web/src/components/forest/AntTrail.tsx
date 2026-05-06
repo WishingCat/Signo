@@ -1,11 +1,11 @@
 import { Mascot } from './Mascot'
 
-/** 页脚爬行的蚂蚁队列。CSS 动画持续向右行进。 */
+/** 装饰用蚂蚁队列。父容器决定定位（fixed / absolute），本组件只负责水平爬行动画。 */
 export function AntTrail() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed bottom-0 left-0 right-0 h-10 overflow-hidden"
+      className="pointer-events-none w-full h-10 overflow-hidden"
       style={{
         maskImage:
           'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',

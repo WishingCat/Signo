@@ -4,9 +4,10 @@ import { getSessionUser } from '@/lib/auth/session'
 import { Firefly } from '@/components/forest/Firefly'
 import { AntTrail } from '@/components/forest/AntTrail'
 import { TierBadge } from '@/components/forest/TierBadge'
+import { BottomNav } from '@/components/nav/BottomNav'
 
 export const metadata: Metadata = {
-  title: 'Signo · 手语森林',
+  title: '手诺 · Signo',
   description: '一个温柔安静的手语练习场。',
 }
 
@@ -20,35 +21,25 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col relative overflow-x-hidden">
         <Firefly className="fixed top-20 left-4 z-0" period={3.2} />
         <Firefly className="fixed top-40 right-6 z-0" period={4.4} intensity={0.7} />
-        <Firefly className="fixed bottom-28 left-10 z-0" period={5} intensity={0.55} />
+        <Firefly className="fixed bottom-32 left-10 z-0" period={5} intensity={0.55} />
 
         <header className="relative z-10 px-5 pt-5 pb-3 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2.5 group">
             <LogoMark />
             <span className="flex flex-col leading-none">
-              <span className="text-[20px] font-bold text-ink -mb-0.5 group-hover:text-moss transition-colors">
-                手语森林
+              <span className="text-[20px] font-bold text-ink -mb-0.5 group-hover:text-moss transition-colors tracking-[0.05em]">
+                手诺
               </span>
-              <span className="text-[10px] tracking-[0.3em] uppercase text-bark/55">
+              <span className="text-[10px] tracking-[0.32em] uppercase text-bark/55">
                 Signo
               </span>
             </span>
           </a>
           <nav className="flex items-center gap-3 text-[13px]">
             {user ? (
-              <>
-                <a href={`/profile/${user.friendCode}`} className="hover:opacity-90 transition-opacity">
-                  <TierBadge tier={user.tier} />
-                </a>
-                <form action="/api/auth/logout" method="post">
-                  <button
-                    type="submit"
-                    className="text-bark/55 hover:text-ochre underline decoration-bark/20 underline-offset-4 decoration-dotted"
-                  >
-                    退出
-                  </button>
-                </form>
-              </>
+              <a href={`/profile/${user.friendCode}`} className="hover:opacity-90 transition-opacity">
+                <TierBadge tier={user.tier} />
+              </a>
             ) : (
               <a
                 href="/login"
@@ -60,11 +51,15 @@ export default async function RootLayout({
           </nav>
         </header>
 
-        <main className="relative z-10 flex-1 w-full max-w-[520px] mx-auto px-4 pb-28">
+        <main className="relative z-10 flex-1 w-full max-w-[520px] mx-auto px-4 pb-32">
           {children}
         </main>
 
-        <AntTrail />
+        <div className="fixed bottom-[78px] left-0 right-0 z-10 pointer-events-none">
+          <AntTrail />
+        </div>
+
+        <BottomNav />
       </body>
     </html>
   )
