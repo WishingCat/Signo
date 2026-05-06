@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { SketchDivider } from '@/components/forest/SketchDivider'
 import { Mascot, TIER_MASCOT, MASCOT_LABEL } from '@/components/forest/Mascot'
 import { StreakFlame } from '@/components/forest/StreakFlame'
+import { Vine } from '@/components/forest/Vine'
+import { Berry } from '@/components/forest/Berry'
 import { getSessionUser } from '@/lib/auth/session'
 import { getUserProgress } from '@/lib/progress/service'
 import { listFriends } from '@/lib/social/service'
@@ -22,7 +24,10 @@ export default async function MePage() {
 
   return (
     <div className="py-6 space-y-5 bloom-in">
-      <Card tilt="left" tape density="cozy">
+      <Card tilt="left" tape density="cozy" className="overflow-visible">
+        {/* vine draping from top-right + berry cluster pinned at top-left of card */}
+        <Vine className="absolute -top-3 -right-2 w-10 h-28 opacity-85 pointer-events-none z-10" mirror />
+        <Berry className="absolute -top-4 -left-3 w-12 h-14 opacity-90 pointer-events-none -rotate-[8deg] z-10" />
         <div className="flex items-start gap-4">
           <div className="relative shrink-0">
             <span

@@ -126,6 +126,15 @@ body {
   20%  { opacity: 1; }
   100% { transform: translateY(180px) rotate(220deg); opacity: 0; }
 }
+@keyframes light-pulse {
+  0%   { opacity: 0.55; }
+  100% { opacity: 1; }
+}
+@keyframes mist-roll {
+  0%   { transform: translateX(-3%); opacity: 0.35; }
+  50%  { transform: translateX(3%);  opacity: 0.55; }
+  100% { transform: translateX(-3%); opacity: 0.35; }
+}
 
 .bloom-in { animation: bloom-in 700ms cubic-bezier(.2,.7,.1,1) both; }
 .leaf-breathe { animation: leaf-float 5s ease-in-out infinite; transform-origin: center; }

@@ -4,6 +4,10 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Mascot } from '@/components/forest/Mascot'
+import { Fern } from '@/components/forest/Fern'
+import { Mushroom } from '@/components/forest/Mushroom'
+import { Berry } from '@/components/forest/Berry'
+import { Vine } from '@/components/forest/Vine'
 import { SketchDivider } from '@/components/forest/SketchDivider'
 import type { RegisterInput } from '@/lib/auth/auth.schema'
 
@@ -41,13 +45,19 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="py-8 bloom-in">
-      <div className="text-center mb-6">
+    <div className="py-8 bloom-in relative">
+      {/* corner decorations */}
+      <Vine className="absolute -top-2 right-1 w-12 h-32 opacity-85 pointer-events-none" mirror />
+      <Berry className="absolute top-32 -left-2 w-12 h-14 opacity-85 pointer-events-none -rotate-12" />
+      <Fern className="absolute -bottom-4 -left-4 w-24 h-32 opacity-90 pointer-events-none" />
+      <Mushroom variant="red" className="absolute bottom-2 right-2 w-14 h-16 opacity-90 pointer-events-none" />
+
+      <div className="text-center mb-6 relative">
         <div className="relative inline-block">
           <div
             className="absolute inset-0 -z-10"
             style={{
-              background: 'radial-gradient(circle at 50% 50%, rgba(243,201,105,0.25) 0%, transparent 65%)',
+              background: 'radial-gradient(circle at 50% 50%, rgba(243,201,105,0.28) 0%, transparent 65%)',
             }}
           />
           <Mascot name="ant" className="h-20 w-20 mx-auto text-bark" title="小蚂蚁欢迎你" />

@@ -4,6 +4,10 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Mascot } from '@/components/forest/Mascot'
+import { Fern } from '@/components/forest/Fern'
+import { Mushroom } from '@/components/forest/Mushroom'
+import { Berry } from '@/components/forest/Berry'
+import { Vine } from '@/components/forest/Vine'
 import { SketchDivider } from '@/components/forest/SketchDivider'
 import type { LoginInput } from '@/lib/auth/auth.schema'
 
@@ -41,8 +45,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="py-10 bloom-in">
-      <div className="text-center mb-6">
+    <div className="py-10 bloom-in relative">
+      {/* corner decorations (mirrored from register) */}
+      <Vine className="absolute -top-2 left-1 w-12 h-32 opacity-85 pointer-events-none" />
+      <Berry className="absolute top-36 -right-2 w-12 h-14 opacity-85 pointer-events-none rotate-12" color="forest" />
+      <Fern className="absolute -bottom-4 -right-4 w-24 h-32 opacity-90 pointer-events-none" mirror />
+      <Mushroom variant="gold" className="absolute bottom-2 left-2 w-12 h-16 opacity-90 pointer-events-none" />
+
+      <div className="text-center mb-6 relative">
         <div className="relative inline-block">
           <div
             className="absolute -inset-4 -z-10 rounded-full"

@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import type { LessonTreeItem } from '@/lib/curriculum/types'
 import type { LessonProgressMap } from '@/lib/progress/service'
+import { Mushroom } from './Mushroom'
+import { Fern } from './Fern'
+import { Berry } from './Berry'
 import { cn } from '@/lib/utils'
 
 const X_POSITIONS = [32, 70, 26, 64, 38, 76, 24, 60, 48]
@@ -54,6 +57,15 @@ function UnitPath({
       <UnitSign unit={unit} cleared={cleared} total={lessons.length} index={unitIndex} />
       {nodes.length > 0 && (
         <div className="relative" style={{ height }}>
+          {/* roadside flora — alternating left/right */}
+          <Fern className="absolute -left-2 top-[80px] w-14 h-20 opacity-75 pointer-events-none" />
+          <Mushroom variant="cluster" className="absolute right-1 top-[200px] w-16 h-12 opacity-85 pointer-events-none" />
+          {nodes.length >= 3 && (
+            <Berry className="absolute -left-3 top-[340px] w-10 h-12 opacity-85 -rotate-12 pointer-events-none" color="forest" />
+          )}
+          {nodes.length >= 4 && (
+            <Fern className="absolute -right-2 top-[460px] w-14 h-20 opacity-75 pointer-events-none" mirror />
+          )}
           <svg
             viewBox={`0 0 100 ${height}`}
             preserveAspectRatio="none"

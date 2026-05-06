@@ -5,6 +5,9 @@ import { getSessionUser } from '@/lib/auth/session'
 import { getLessonProgressMap } from '@/lib/progress/service'
 import { Mascot } from '@/components/forest/Mascot'
 import { Leaf } from '@/components/forest/Leaf'
+import { Fern } from '@/components/forest/Fern'
+import { Berry } from '@/components/forest/Berry'
+import { Mushroom } from '@/components/forest/Mushroom'
 import { ForestPath } from '@/components/forest/ForestPath'
 
 export default async function Home() {
@@ -30,7 +33,9 @@ export default async function Home() {
 
 function PathHeading() {
   return (
-    <div className="text-center pt-2">
+    <div className="text-center pt-2 relative">
+      <Berry className="absolute -top-1 left-2 w-10 h-12 opacity-85 -rotate-12 pointer-events-none" />
+      <Berry className="absolute top-0 right-3 w-9 h-11 opacity-85 rotate-12 pointer-events-none" color="forest" />
       <h2 className="brush-text text-[20px]">森林之路</h2>
       <p className="text-[12px] text-bark/55 mt-0.5">点亮一只小动物，就是踏上一段新路</p>
     </div>
@@ -97,7 +102,9 @@ function GuestInvite() {
 
 function FooterNote() {
   return (
-    <div className="pt-6 text-center space-y-2 opacity-70">
+    <div className="pt-6 text-center space-y-2 opacity-80 relative">
+      <Fern className="absolute -bottom-2 -left-2 w-16 h-20 opacity-70 pointer-events-none" />
+      <Mushroom variant="red" className="absolute -bottom-1 -right-1 w-12 h-14 opacity-80 pointer-events-none" />
       <div className="flex justify-center gap-4">
         <Leaf size={28} rotate={-20} color="var(--color-moss)" />
         <Leaf size={24} rotate={20} color="var(--color-hazel)" />

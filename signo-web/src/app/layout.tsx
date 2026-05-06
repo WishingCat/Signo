@@ -2,9 +2,10 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { getSessionUser } from '@/lib/auth/session'
 import { Firefly } from '@/components/forest/Firefly'
-import { AntTrail } from '@/components/forest/AntTrail'
 import { TierBadge } from '@/components/forest/TierBadge'
 import { BottomNav } from '@/components/nav/BottomNav'
+import { LightShaft } from '@/components/forest/LightShaft'
+import { MossGround } from '@/components/forest/MossGround'
 
 export const metadata: Metadata = {
   title: '手诺 · Signo',
@@ -19,9 +20,16 @@ export default async function RootLayout({
   return (
     <html lang="zh-CN" className="h-full antialiased">
       <body className="min-h-full flex flex-col relative overflow-x-hidden">
-        <Firefly className="fixed top-20 left-4 z-0" period={3.2} />
-        <Firefly className="fixed top-40 right-6 z-0" period={4.4} intensity={0.7} />
-        <Firefly className="fixed bottom-32 left-10 z-0" period={5} intensity={0.55} />
+        {/* 林间斜射光柱（左 + 右），柔和脉动 */}
+        <LightShaft side="left" delay="0s" />
+        <LightShaft side="right" delay="2.5s" />
+
+        {/* 角落里的萤火虫 */}
+        <Firefly className="fixed top-24 left-3 z-0" period={3.2} />
+        <Firefly className="fixed top-44 right-5 z-0" period={4.4} intensity={0.7} />
+        <Firefly className="fixed top-80 left-8 z-0" period={5} intensity={0.55} />
+        <Firefly className="fixed bottom-40 right-12 z-0" period={3.8} intensity={0.6} />
+        <Firefly className="fixed bottom-56 left-6 z-0" period={4.7} intensity={0.5} />
 
         <header className="relative z-10 px-5 pt-5 pb-3 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2.5 group">
@@ -55,8 +63,11 @@ export default async function RootLayout({
           {children}
         </main>
 
-        <div className="fixed bottom-[78px] left-0 right-0 z-10 pointer-events-none">
-          <AntTrail />
+        {/* 森林地面（底栏正上方）：苔藓 + 鹅卵石 + 散叶 + 蕨叶 + 蘑菇丛 */}
+        <div className="fixed bottom-[78px] left-0 right-0 z-10 pointer-events-none px-2">
+          <div className="max-w-[520px] mx-auto">
+            <MossGround />
+          </div>
         </div>
 
         <BottomNav />
