@@ -15,6 +15,20 @@ export const ClearLessonInput = z.object({
 
 export type ClearLessonInput = z.infer<typeof ClearLessonInput>
 
+export const ClearReviewInput = z.object({
+  answers: z
+    .array(
+      z.object({
+        questionId: z.string().min(1),
+        choice: z.number().int().min(0),
+        msSpent: z.number().int().nonnegative(),
+      }),
+    )
+    .min(1),
+})
+
+export type ClearReviewInput = z.infer<typeof ClearReviewInput>
+
 export const ClearLessonResult = z.object({
   xp: z.number().int(),
   correct: z.number().int(),

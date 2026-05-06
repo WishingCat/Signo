@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db'
 import { lessonXp, lessonStars } from '@/lib/curriculum/scoring'
 import { bumpStreakOnClear } from './streak'
-import type { ClearResult, OnLessonClearArgs } from './types'
+import type { ClearResult, GradedAnswer, OnLessonClearArgs } from './types'
 
 /**
  * 结算关卡 hook：W2 起同时更新 streak / totalXp / weeklyXp。
@@ -64,6 +64,48 @@ export async function onLessonClear(
 
 function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10)
+}
+
+/** 复习关结算：不写 LessonClear（非正式关卡），仅记 Attempts + XP + streak */
+export async function onReviewClear(args: {
+  userId: string
+  graded: GradedAnswer[]
+}): Promise<ClearResult> {
+  const { userId, graded } = args
+  const correct = graded.reduce((n, g) => n + (g.isCorrect ? 1 : 0), 0)
+  const total = graded.length
+
+  for (const g of graded) {
+    await prisma.attempt.create({
+      data: {
+        userId,
+        questionId: g.questionId,
+        isCorrect: g.isCorrect,
+        msSpent: g.msSpent,
+      },
+    })
+  }
+
+  // 复习关 XP 按比例给，较正式关稍低（以鼓励先完成正课）：每对 2 XP，全对额外 +3
+  const xp = Math.max(0, correct * 2) + (correct === total && total > 0 ? 3 : 0)
+  const stars = lessonStars({ total, correct })
+
+  const today = todayIsoDate()
+  await prisma.dailyStat.upsert({
+    where: { userId_date: { userId, date: today } },
+    create: { userId, date: today, xp, lessonsCleared: 0 },
+    update: { xp: { increment: xp } },
+  })
+
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { totalXp: { increment: xp }, weeklyXp: { increment: xp } },
+    select: { totalXp: true },
+  })
+
+  const streak = await bumpStreakOnClear(userId, today)
+
+  return { xp, correct, total, stars, streak, totalXp: updated.totalXp }
 }
 
 export async function getTodayXp(userId: string): Promise<number> {

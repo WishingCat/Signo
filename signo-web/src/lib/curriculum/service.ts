@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db'
-import type { LearnQuestion, LessonTreeItem } from './types'
+import type { LearnQuestion, LessonTreeItem, MistakeItem } from './types'
 
 export async function getLessonTree(): Promise<LessonTreeItem[]> {
   const units = await prisma.unit.findMany({
@@ -38,14 +38,25 @@ export async function getQuestionsForLesson(
     include: { promptMedia: true },
   })
 
-  return qs.map((q) => ({
+  return qs.map(toLearnQuestion)
+}
+
+function toLearnQuestion(q: {
+  id: string
+  order: number
+  type: string
+  promptText: string | null
+  promptMedia: { path: string } | null
+  choicesJson: string
+}): LearnQuestion {
+  return {
     id: q.id,
     order: q.order,
     type: (q.type === 'word2sign' ? 'word2sign' : 'sign2word') as LearnQuestion['type'],
     promptText: q.promptText,
     promptMediaPath: q.promptMedia?.path ?? null,
     choices: safeParseChoices(q.choicesJson),
-  }))
+  }
 }
 
 export async function gradeAnswer(
@@ -60,6 +71,75 @@ export async function gradeAnswer(
 export async function getQuestionsMapForLesson(lessonId: string) {
   const qs = await prisma.question.findMany({
     where: { lessonId },
+    select: { id: true, answerIndex: true },
+  })
+  return new Map(qs.map((q) => [q.id, q.answerIndex]))
+}
+
+/** 用户最近的错题汇总，按最近一次错误时间倒序 */
+export async function getRecentMistakes(
+  userId: string,
+  limit = 20,
+): Promise<MistakeItem[]> {
+  const wrongs = await prisma.attempt.findMany({
+    where: { userId, isCorrect: false },
+    orderBy: { answeredAt: 'desc' },
+    take: limit * 4,
+    include: {
+      question: {
+        include: { promptMedia: true, lesson: true },
+      },
+    },
+  })
+  const byQ = new Map<string, MistakeItem>()
+  for (const w of wrongs) {
+    const q = w.question
+    const existing = byQ.get(q.id)
+    if (existing) {
+      existing.timesWrong += 1
+      continue
+    }
+    byQ.set(q.id, {
+      questionId: q.id,
+      lessonId: q.lessonId,
+      lessonTitle: q.lesson.title,
+      promptText: q.promptText,
+      promptMediaPath: q.promptMedia?.path ?? null,
+      type: (q.type === 'word2sign' ? 'word2sign' : 'sign2word') as MistakeItem['type'],
+      timesWrong: 1,
+      lastWrongAt: w.answeredAt,
+    })
+    if (byQ.size >= limit) break
+  }
+  return Array.from(byQ.values())
+}
+
+/** 拼出复习关题目集：取用户最近 N 道错题（去重），补全为 LearnQuestion */
+export async function getReviewSet(
+  userId: string,
+  size = 6,
+): Promise<LearnQuestion[]> {
+  const mistakes = await getRecentMistakes(userId, size)
+  if (mistakes.length === 0) return []
+  const ids = mistakes.map((m) => m.questionId)
+  const qs = await prisma.question.findMany({
+    where: { id: { in: ids } },
+    include: { promptMedia: true },
+  })
+  const map = new Map(qs.map((q) => [q.id, q]))
+  return mistakes
+    .map((m, i) => {
+      const q = map.get(m.questionId)
+      if (!q) return null
+      return { ...toLearnQuestion(q), order: i }
+    })
+    .filter((x): x is LearnQuestion => x !== null)
+}
+
+/** 只给 questionId → answerIndex 的映射（review 用，不依赖 lessonId） */
+export async function getQuestionsMapByIds(questionIds: string[]) {
+  const qs = await prisma.question.findMany({
+    where: { id: { in: questionIds } },
     select: { id: true, answerIndex: true },
   })
   return new Map(qs.map((q) => [q.id, q.answerIndex]))

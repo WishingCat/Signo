@@ -64,15 +64,11 @@ async function main() {
     },
   })
 
+  // Lessons 1-3: sign2word（看手语选词）—— 上衣 / 下装 / 鞋类
   for (const [lessonOrder, category] of CATALOG.entries()) {
     const lesson = await db.lesson.create({
-      data: {
-        unitId: unit.id,
-        order: lessonOrder + 1,
-        title: category.title,
-      },
+      data: { unitId: unit.id, order: lessonOrder + 1, title: category.title },
     })
-
     const labels = category.items.map((i) => i.label)
 
     for (const [qOrder, item] of category.items.entries()) {
@@ -95,6 +91,26 @@ async function main() {
         },
       })
     }
+  }
+
+  // Lesson 4: word2sign（看词选手语）—— 使用"上衣"四张图作为选项
+  const tops = CATALOG[0]
+  const topPaths = tops.items.map((i) => `/signs/${i.file}`)
+  const lesson4 = await db.lesson.create({
+    data: { unitId: unit.id, order: 4, title: '反向练习 · 上衣' },
+  })
+  for (const [qOrder, item] of tops.items.entries()) {
+    await db.question.create({
+      data: {
+        lessonId: lesson4.id,
+        order: qOrder,
+        type: 'word2sign',
+        promptText: item.label,
+        promptMediaId: null,
+        choicesJson: JSON.stringify(topPaths),
+        answerIndex: qOrder,
+      },
+    })
   }
 
   const unitCount = await db.unit.count()

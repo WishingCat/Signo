@@ -24,5 +24,17 @@ export type LearnQuestion = {
   type: 'sign2word' | 'word2sign'
   promptText: string | null
   promptMediaPath: string | null
+  /** sign2word 为文字标签；word2sign 为图片路径 */
   choices: string[]
+}
+
+export type MistakeItem = {
+  questionId: string
+  lessonId: string
+  lessonTitle: string
+  promptText: string | null
+  promptMediaPath: string | null
+  type: 'sign2word' | 'word2sign'
+  timesWrong: number
+  lastWrongAt: Date
 }
