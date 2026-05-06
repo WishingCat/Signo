@@ -1,28 +1,9 @@
 import type { Metadata } from 'next'
-import { Ma_Shan_Zheng, Noto_Serif_SC, Fraunces } from 'next/font/google'
 import './globals.css'
 import { getSessionUser } from '@/lib/auth/session'
 import { Firefly } from '@/components/forest/Firefly'
 import { AntTrail } from '@/components/forest/AntTrail'
 import { TierBadge } from '@/components/forest/TierBadge'
-
-const maShan = Ma_Shan_Zheng({
-  weight: '400',
-  subsets: ['latin'],
-  variable: '--font-ma-shan',
-  display: 'swap',
-})
-const notoSerif = Noto_Serif_SC({
-  weight: ['400', '500', '700'],
-  subsets: ['latin'],
-  variable: '--font-noto-serif',
-  display: 'swap',
-})
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  variable: '--font-fraunces',
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   title: 'Signo · 手语森林',
@@ -35,12 +16,8 @@ export default async function RootLayout({
   const user = await getSessionUser()
 
   return (
-    <html
-      lang="zh-CN"
-      className={`h-full antialiased ${maShan.variable} ${notoSerif.variable} ${fraunces.variable}`}
-    >
+    <html lang="zh-CN" className="h-full antialiased">
       <body className="min-h-full flex flex-col relative overflow-x-hidden">
-        {/* 角落里三只萤火虫：固定位置 + 脉动 */}
         <Firefly className="fixed top-20 left-4 z-0" period={3.2} />
         <Firefly className="fixed top-40 right-6 z-0" period={4.4} intensity={0.7} />
         <Firefly className="fixed bottom-28 left-10 z-0" period={5} intensity={0.55} />
@@ -49,10 +26,10 @@ export default async function RootLayout({
           <a href="/" className="flex items-center gap-2.5 group">
             <LogoMark />
             <span className="flex flex-col leading-none">
-              <span className="brush-text text-[22px] -mb-0.5 group-hover:text-moss transition-colors">
+              <span className="text-[20px] font-bold text-ink -mb-0.5 group-hover:text-moss transition-colors">
                 手语森林
               </span>
-              <span className="font-[family-name:var(--font-latin)] text-[10px] tracking-[0.3em] uppercase text-bark/55">
+              <span className="text-[10px] tracking-[0.3em] uppercase text-bark/55">
                 Signo
               </span>
             </span>
@@ -64,7 +41,7 @@ export default async function RootLayout({
                 <form action="/api/auth/logout" method="post">
                   <button
                     type="submit"
-                    className="text-bark/55 hover:text-ochre font-[family-name:var(--font-book)] underline decoration-bark/20 underline-offset-4 decoration-wavy"
+                    className="text-bark/55 hover:text-ochre underline decoration-bark/20 underline-offset-4 decoration-dotted"
                   >
                     退出
                   </button>
@@ -73,7 +50,7 @@ export default async function RootLayout({
             ) : (
               <a
                 href="/login"
-                className="brush-text text-[17px] text-hazel hover:text-ochre transition-colors"
+                className="text-[15px] font-medium text-hazel hover:text-ochre transition-colors"
               >
                 进入森林 →
               </a>
@@ -91,7 +68,6 @@ export default async function RootLayout({
   )
 }
 
-/** 角落 logo 标记：水墨圆 + 三笔树冠 */
 function LogoMark() {
   return (
     <svg viewBox="0 0 44 44" className="h-11 w-11" aria-hidden>
