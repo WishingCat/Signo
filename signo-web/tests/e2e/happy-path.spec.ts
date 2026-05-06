@@ -10,7 +10,7 @@ test('register -> home -> play first lesson -> see XP', async ({ page }) => {
   await page.getByTestId('register-submit').click()
 
   await page.waitForURL('/')
-  await expect(page.getByText('上衣')).toBeVisible()
+  await expect(page.getByText('上衣', { exact: true })).toBeVisible()
 
   await page.getByTestId('lesson-link').first().click()
   await expect(page.getByTestId('choice-0')).toBeVisible()
