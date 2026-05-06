@@ -124,9 +124,9 @@ function PebbleProgress({ total, completed, current }: { total: number; complete
 function CompletionScreen({ result, onBack }: { result: ClearLessonResult; onBack: () => void }) {
   const perfect = result.correct === result.total
   const mascotName = perfect ? 'fox' : 'squirrel'
+  const streakMessage = streakBanner(result.streak)
   return (
     <div className="py-8 relative bloom-in" data-testid="lesson-complete">
-      {/* 飘落的叶子装饰（绝对定位 + 动画） */}
       {[
         { left: '8%',  delay: '0s',   color: 'var(--color-moss)',  rotate: -20, size: 34 },
         { left: '24%', delay: '0.4s', color: 'var(--color-sage)',  rotate: 12,  size: 28 },
@@ -136,10 +136,7 @@ function CompletionScreen({ result, onBack }: { result: ClearLessonResult; onBac
         <div
           key={i}
           className="absolute top-0 pointer-events-none"
-          style={{
-            left: l.left,
-            animation: `celebrate-leaves 4.5s ${l.delay} cubic-bezier(.3,.5,.5,1) infinite`,
-          }}
+          style={{ left: l.left, animation: `celebrate-leaves 4.5s ${l.delay} cubic-bezier(.3,.5,.5,1) infinite` }}
         >
           <Leaf size={l.size} color={l.color} rotate={l.rotate} />
         </div>
@@ -152,12 +149,18 @@ function CompletionScreen({ result, onBack }: { result: ClearLessonResult; onBac
           <Firefly className="absolute top-8 left-12" intensity={0.6} period={4} />
           <Mascot name={mascotName} className="h-28 w-28 mx-auto text-bark" />
         </div>
-        <h1 className="brush-text text-[32px] mt-2">
+        <h1 className="brush-text text-[28px] mt-2">
           {perfect ? '叶落满径' : '又有一片叶子落下'}
         </h1>
-        <p className="text-[13px] text-bark/60 italic mt-1">
+        <p className="text-[13px] text-bark/60 mt-1">
           {perfect ? '全部答对——林子给你鼓掌' : '慢慢来，树也没有一次就长高'}
         </p>
+        {streakMessage && (
+          <p className="mt-2 text-[13px] text-hazel">
+            <span className="inline-block align-middle mr-1">🔥</span>
+            {streakMessage}
+          </p>
+        )}
       </div>
 
       <Card tilt="right" density="loose" className="mx-2">
@@ -170,6 +173,7 @@ function CompletionScreen({ result, onBack }: { result: ClearLessonResult; onBac
         <div className="flex items-end justify-center gap-6 mb-4">
           <Stat label="答对" value={`${result.correct} / ${result.total}`} />
           <Stat label="获得" value={`+${result.xp} XP`} accent testId="xp-gain" />
+          <Stat label="连胜" value={`${result.streak.currentStreak} 天`} />
         </div>
 
         <Button size="lg" className="w-full" onClick={onBack}>
@@ -178,6 +182,16 @@ function CompletionScreen({ result, onBack }: { result: ClearLessonResult; onBac
       </Card>
     </div>
   )
+}
+
+function streakBanner(s: ClearLessonResult['streak']): string | null {
+  if (s.event === 'started') return '连胜第 1 天——林子记住了你的脚印。'
+  if (s.event === 'continued') {
+    if (s.currentStreak === s.bestStreak && s.currentStreak >= 3) return `连胜 ${s.currentStreak} 天！打破你自己最好成绩。`
+    return `连胜 ${s.currentStreak} 天`
+  }
+  if (s.event === 'reset') return '重新点起火苗——从今天再数。'
+  return null
 }
 
 function Stat({ label, value, accent = false, testId }: { label: string; value: string; accent?: boolean; testId?: string }) {

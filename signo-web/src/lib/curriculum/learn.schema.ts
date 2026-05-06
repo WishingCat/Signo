@@ -20,6 +20,14 @@ export const ClearLessonResult = z.object({
   correct: z.number().int(),
   total: z.number().int(),
   stars: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  totalXp: z.number().int(),
+  streak: z.object({
+    currentStreak: z.number().int(),
+    bestStreak: z.number().int(),
+    lastClearDate: z.string(),
+    event: z.enum(['continued', 'reset', 'started', 'same-day']),
+  }),
+  badgesEarned: z.array(z.string()).optional(),
 })
 
 export type ClearLessonResult = z.infer<typeof ClearLessonResult>

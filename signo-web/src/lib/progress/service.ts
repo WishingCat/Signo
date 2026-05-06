@@ -1,10 +1,11 @@
 import { prisma } from '@/lib/db'
 import { lessonXp, lessonStars } from '@/lib/curriculum/scoring'
+import { bumpStreakOnClear } from './streak'
 import type { ClearResult, OnLessonClearArgs } from './types'
 
 /**
- * 结算关卡 — W1 只写 Attempt/LessonClear/DailyStat。
- * W2 在此 hook 里追加 streak / 段位 weeklyXp / 错题更新。
+ * 结算关卡 hook：W2 起同时更新 streak / totalXp / weeklyXp。
+ * W3 会在此追加 badge 评估。
  */
 export async function onLessonClear(
   args: OnLessonClearArgs,
@@ -38,7 +39,27 @@ export async function onLessonClear(
     update: { xp: { increment: xp }, lessonsCleared: { increment: 1 } },
   })
 
-  return { xp, correct, total, stars }
+  // 更新用户总 XP / 周 XP
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      totalXp: { increment: xp },
+      weeklyXp: { increment: xp },
+    },
+    select: { totalXp: true },
+  })
+
+  // 连胜推进
+  const streak = await bumpStreakOnClear(userId, today)
+
+  return {
+    xp,
+    correct,
+    total,
+    stars,
+    streak,
+    totalXp: updatedUser.totalXp,
+  }
 }
 
 function todayIsoDate(): string {
@@ -50,4 +71,43 @@ export async function getTodayXp(userId: string): Promise<number> {
     where: { userId_date: { userId, date: todayIsoDate() } },
   })
   return stat?.xp ?? 0
+}
+
+export type UserProgressSummary = {
+  todayXp: number
+  totalXp: number
+  weeklyXp: number
+  currentStreak: number
+  bestStreak: number
+  tier: number
+  lessonsClearedTotal: number
+}
+
+export async function getUserProgress(userId: string): Promise<UserProgressSummary> {
+  const [u, todayStat, clearsCount] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        totalXp: true,
+        weeklyXp: true,
+        currentStreak: true,
+        bestStreak: true,
+        tier: true,
+      },
+    }),
+    prisma.dailyStat.findUnique({
+      where: { userId_date: { userId, date: todayIsoDate() } },
+    }),
+    prisma.lessonClear.count({ where: { userId } }),
+  ])
+  if (!u) throw new Error('getUserProgress: user not found')
+  return {
+    todayXp: todayStat?.xp ?? 0,
+    totalXp: u.totalXp,
+    weeklyXp: u.weeklyXp,
+    currentStreak: u.currentStreak,
+    bestStreak: u.bestStreak,
+    tier: u.tier,
+    lessonsClearedTotal: clearsCount,
+  }
 }

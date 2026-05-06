@@ -11,21 +11,26 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  username     String        @unique
-  passwordHash String
-  nickname     String
-  friendCode   String        @unique
-  avatarSeed   String        @default("default")
-  role         String        @default("user") // user | admin
-  tier         Int           @default(1)      // 1..7 森林段位（L1 小蚂蚁 → L7 麋鹿神）
-  pkScore      Int           @default(1000)
-  pkWins       Int           @default(0)
-  pkLosses     Int           @default(0)
-  createdAt    DateTime      @default(now())
-  attempts     Attempt[]
-  clears       LessonClear[]
-  daily        DailyStat[]
+  id             String        @id @default(cuid())
+  username       String        @unique
+  passwordHash   String
+  nickname       String
+  friendCode     String        @unique
+  avatarSeed     String        @default("default")
+  role           String        @default("user") // user | admin
+  tier           Int           @default(1)      // 1..7 森林段位
+  pkScore        Int           @default(1000)
+  pkWins         Int           @default(0)
+  pkLosses       Int           @default(0)
+  totalXp        Int           @default(0)
+  weeklyXp       Int           @default(0)
+  currentStreak  Int           @default(0)
+  bestStreak     Int           @default(0)
+  lastClearDate  String?                        // YYYY-MM-DD, 最近一次通关日
+  createdAt      DateTime      @default(now())
+  attempts       Attempt[]
+  clears         LessonClear[]
+  daily          DailyStat[]
 }
 
 model Unit {

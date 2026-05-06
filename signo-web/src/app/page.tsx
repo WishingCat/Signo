@@ -2,27 +2,34 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getLessonTree } from '@/lib/curriculum/service'
 import { getSessionUser } from '@/lib/auth/session'
-import { getTodayXp } from '@/lib/progress/service'
+import { getUserProgress } from '@/lib/progress/service'
 import { Mascot, TIER_MASCOT, MASCOT_LABEL } from '@/components/forest/Mascot'
 import { SketchDivider } from '@/components/forest/SketchDivider'
 import { Leaf } from '@/components/forest/Leaf'
+import { UnitClearing } from '@/components/home/UnitClearing'
 
 export default async function Home() {
   const [tree, user] = await Promise.all([getLessonTree(), getSessionUser()])
-  const todayXp = user ? await getTodayXp(user.id) : 0
+  const progress = user ? await getUserProgress(user.id) : null
 
   return (
-    <div className="py-6 space-y-6 bloom-in">
-      {user ? <WelcomeStrip nickname={user.nickname} tier={user.tier} xp={todayXp} /> : <GuestInvite />}
+    <div className="py-6 space-y-5 bloom-in">
+      {user && progress ? (
+        <>
+          <Dashboard nickname={user.nickname} progress={progress} />
+          <QuickActions />
+        </>
+      ) : (
+        <GuestInvite />
+      )}
 
       {tree.length === 0 ? (
         <Card><p className="text-bark/70">森林里还没有课程，稍后再来。</p></Card>
       ) : (
         <div className="space-y-7 relative">
-          {/* 左侧竖向虚线"小径" */}
           <div className="absolute left-[22px] top-6 bottom-6 border-l-2 border-dashed border-bark/15 pointer-events-none" aria-hidden />
           {tree.map((node, i) => (
-            <UnitClearing key={node.unit.id} index={i} {...node} />
+            <UnitClearing key={node.unit.id} index={i} unit={node.unit} lessons={node.lessons} />
           ))}
         </div>
       )}
@@ -32,33 +39,92 @@ export default async function Home() {
   )
 }
 
-function WelcomeStrip({ nickname, tier, xp }: { nickname: string; tier: number; xp: number }) {
-  const name = TIER_MASCOT[Math.min(Math.max(tier, 1), 7)]
+function Dashboard({
+  nickname,
+  progress,
+}: {
+  nickname: string
+  progress: Awaited<ReturnType<typeof getUserProgress>>
+}) {
+  const name = TIER_MASCOT[Math.min(Math.max(progress.tier, 1), 7)]
   return (
     <Card tilt="left" tape density="cozy" className="mx-1">
       <div className="flex items-center gap-4">
         <div className="relative shrink-0">
           <span
             className="absolute inset-0 rounded-full -z-0"
-            style={{
-              background: 'radial-gradient(circle, rgba(143,166,127,0.35) 0%, transparent 70%)',
-            }}
+            style={{ background: 'radial-gradient(circle, rgba(143,166,127,0.35) 0%, transparent 70%)' }}
           />
           <Mascot name={name} className="h-16 w-16 text-bark relative" />
         </div>
-        <div className="flex-1">
-          <p className="text-[13px] text-bark/60 italic">清晨好，</p>
-          <h2 className="brush-text text-[26px] leading-tight">{nickname}</h2>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] text-bark/60">清晨好，</p>
+          <h2 className="brush-text text-[22px] leading-tight truncate">{nickname}</h2>
           <p className="text-[12px] text-bark/55 mt-0.5">
-            你是一只<span className="text-moss brush-text text-[14px] mx-0.5">{MASCOT_LABEL[name]}</span>
+            你是一只<span className="text-moss font-medium mx-0.5">{MASCOT_LABEL[name]}</span>
+            · L{progress.tier}
           </p>
         </div>
-        <div className="text-right">
-          <div className="font-[family-name:var(--font-latin)] text-[28px] text-hazel leading-none">+{xp}</div>
-          <div className="text-[10px] tracking-[0.25em] text-bark/50 uppercase mt-1">Today · XP</div>
-        </div>
+      </div>
+
+      <SketchDivider className="my-4" />
+
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <Metric label="今日" value={`+${progress.todayXp}`} hint="XP" accent />
+        <Metric label="累计" value={progress.totalXp.toString()} hint="XP" />
+        <Metric label="连胜" value={progress.currentStreak.toString()} hint={progress.currentStreak > 0 ? '天' : '等你'} />
       </div>
     </Card>
+  )
+}
+
+function Metric({ label, value, hint, accent = false }: { label: string; value: string; hint: string; accent?: boolean }) {
+  return (
+    <div className="rounded-[12px] bg-oat/50 border border-bark/10 px-2 py-3">
+      <div className="text-[10px] tracking-[0.2em] uppercase text-bark/50">{label}</div>
+      <div className={`mt-1 leading-none tabular-nums font-medium ${accent ? 'text-[22px] text-hazel' : 'text-[20px] text-ink'}`}>
+        {value}
+      </div>
+      <div className="text-[10px] text-bark/45 mt-1">{hint}</div>
+    </div>
+  )
+}
+
+function QuickActions() {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <a href="/mistakes" className="group">
+        <Card density="tight" className="flex items-center gap-3 group-hover:-translate-y-[1px] transition-transform">
+          <div className="h-10 w-10 rounded-full bg-ochre/15 flex items-center justify-center text-ochre">
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" aria-hidden>
+              <path d="M4 4 L 20 4 L 20 20 L 4 20 Z M 4 9 L 20 9" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <circle cx="7" cy="6.5" r="0.8" />
+              <path d="M8 12 L 16 12 M 8 15 L 14 15" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+            </svg>
+          </div>
+          <div>
+            <div className="text-[15px] font-medium text-ink">错题本</div>
+            <div className="text-[11px] text-bark/55">被风吹落的那些叶子</div>
+          </div>
+        </Card>
+      </a>
+      <a href="/review" className="group">
+        <Card density="tight" className="flex items-center gap-3 group-hover:-translate-y-[1px] transition-transform">
+          <div className="h-10 w-10 rounded-full bg-moss/15 flex items-center justify-center text-moss">
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+              <path d="M4 12 a 8 8 0 0 1 14 -5" />
+              <path d="M20 12 a 8 8 0 0 1 -14 5" />
+              <path d="M18 4 L 18 7 L 15 7" />
+              <path d="M6 20 L 6 17 L 9 17" />
+            </svg>
+          </div>
+          <div>
+            <div className="text-[15px] font-medium text-ink">今日复习</div>
+            <div className="text-[11px] text-bark/55">把错过的叶子拾起来</div>
+          </div>
+        </Card>
+      </a>
+    </div>
   )
 }
 
@@ -69,12 +135,11 @@ function GuestInvite() {
       <div className="flex items-start gap-4">
         <Mascot name="squirrel" className="h-20 w-20 text-hazel shrink-0" />
         <div className="flex-1">
-          <h2 className="brush-text text-[24px] leading-tight">
+          <h2 className="brush-text text-[22px] leading-tight">
             林子里<span className="text-moss">留一把椅子</span>给你
           </h2>
           <p className="text-[13px] text-bark/70 leading-6 mt-2">
-            起个名字，就能看见属于你的小动物。每学会一个手语，
-            就有一片叶子为你落下。
+            起个名字，就能看见属于你的小动物。每学会一个手语，就有一片叶子为你落下。
           </p>
           <div className="mt-4 flex gap-2">
             <a href="/register"><Button size="md">创建小屋</Button></a>
@@ -86,55 +151,6 @@ function GuestInvite() {
   )
 }
 
-function UnitClearing({
-  unit,
-  lessons,
-  index,
-}: {
-  unit: { id: string; order: number; title: string; description: string }
-  lessons: { id: string; order: number; title: string; questionCount: number }[]
-  index: number
-}) {
-  const unitNumber = String(index + 1).padStart(2, '0')
-  return (
-    <section className="relative pl-12">
-      {/* 单元序号圆牌 */}
-      <div className="absolute left-0 top-1 h-11 w-11 rounded-full bg-cream border-2 border-moss shadow-[var(--shadow-soft)] flex items-center justify-center">
-        <span className="font-[family-name:var(--font-latin)] text-[15px] text-moss">{unitNumber}</span>
-      </div>
-
-      <div className="mb-3">
-        <h3 className="brush-text text-[22px] leading-tight">{unit.title}</h3>
-        <p className="text-[12px] text-bark/60 italic mt-0.5">{unit.description}</p>
-        <SketchDivider className="mt-2" />
-      </div>
-
-      <ul className="space-y-2.5">
-        {lessons.map((l, li) => (
-          <li key={l.id}>
-            <a
-              href={`/learn/${l.id}`}
-              data-testid="lesson-link"
-              className="group flex items-center gap-3 rounded-[14px] px-3 py-2.5 bg-cream/70 hover:bg-cream hover:-translate-y-[1px] transition-all border border-bark/10 shadow-[0_2px_0_rgba(74,58,44,0.06)]"
-            >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-oat border border-bark/15">
-                <span className="font-[family-name:var(--font-latin)] text-[13px] text-bark/70">{li + 1}</span>
-              </span>
-              <span className="flex-1 min-w-0">
-                <span className="block text-[15px] text-ink font-[family-name:var(--font-book)]">{l.title}</span>
-                <span className="block text-[11px] text-bark/50">{l.questionCount} 片叶子</span>
-              </span>
-              <span className="brush-text text-[16px] text-hazel group-hover:translate-x-0.5 transition-transform">
-                去 →
-              </span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-}
-
 function FooterNote() {
   return (
     <div className="pt-6 text-center space-y-2 opacity-70">
@@ -143,9 +159,7 @@ function FooterNote() {
         <Leaf size={24} rotate={20} color="var(--color-hazel)" />
         <Leaf size={28} rotate={-8} color="var(--color-sage)" />
       </div>
-      <p className="font-[family-name:var(--font-latin)] text-[11px] tracking-[0.3em] uppercase text-bark/50">
-        the forest speaks without sound
-      </p>
+      <p className="text-[11px] tracking-[0.3em] uppercase text-bark/50">the forest speaks without sound</p>
     </div>
   )
 }

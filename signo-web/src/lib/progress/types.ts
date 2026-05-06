@@ -1,3 +1,5 @@
+import type { StreakDelta } from './streak'
+
 export type GradedAnswer = {
   questionId: string
   choice: number
@@ -10,6 +12,10 @@ export type ClearResult = {
   correct: number
   total: number
   stars: 1 | 2 | 3
+  streak: StreakDelta
+  totalXp: number
+  /** Phase B 回填 */
+  badgesEarned?: string[]
 }
 
 export type OnLessonClearArgs = {
