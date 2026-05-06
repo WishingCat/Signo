@@ -44,3 +44,10 @@ export async function onLessonClear(
 function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10)
 }
+
+export async function getTodayXp(userId: string): Promise<number> {
+  const stat = await prisma.dailyStat.findUnique({
+    where: { userId_date: { userId, date: todayIsoDate() } },
+  })
+  return stat?.xp ?? 0
+}
