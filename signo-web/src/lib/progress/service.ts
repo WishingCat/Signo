@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { lessonXp, lessonStars } from '@/lib/curriculum/scoring'
 import { bumpStreakOnClear } from './streak'
+import { awardBadges } from '@/lib/badges/service'
 import type { ClearResult, GradedAnswer, OnLessonClearArgs } from './types'
 
 /**
@@ -52,6 +53,16 @@ export async function onLessonClear(
   // 连胜推进
   const streak = await bumpStreakOnClear(userId, today)
 
+  // 徽章评估（lessonsCleared 需实时 count；刚 create 过一条所以 +1）
+  const lessonsCleared = await prisma.lessonClear.count({ where: { userId } })
+  const badgesEarned = await awardBadges(userId, {
+    lessonsCleared,
+    currentStreak: streak.currentStreak,
+    totalXp: updatedUser.totalXp,
+    completedReview: false,
+    isLessonPerfect: correct === total && total > 0,
+  })
+
   return {
     xp,
     correct,
@@ -59,6 +70,7 @@ export async function onLessonClear(
     stars,
     streak,
     totalXp: updatedUser.totalXp,
+    badgesEarned,
   }
 }
 
@@ -105,7 +117,16 @@ export async function onReviewClear(args: {
 
   const streak = await bumpStreakOnClear(userId, today)
 
-  return { xp, correct, total, stars, streak, totalXp: updated.totalXp }
+  const lessonsCleared = await prisma.lessonClear.count({ where: { userId } })
+  const badgesEarned = await awardBadges(userId, {
+    lessonsCleared,
+    currentStreak: streak.currentStreak,
+    totalXp: updated.totalXp,
+    completedReview: true,
+    isLessonPerfect: false,
+  })
+
+  return { xp, correct, total, stars, streak, totalXp: updated.totalXp, badgesEarned }
 }
 
 export async function getTodayXp(userId: string): Promise<number> {
@@ -152,4 +173,36 @@ export async function getUserProgress(userId: string): Promise<UserProgressSumma
     tier: u.tier,
     lessonsClearedTotal: clearsCount,
   }
+}
+
+export type LeaderRow = {
+  rank: number
+  userId: string
+  nickname: string
+  friendCode: string
+  tier: number
+  weeklyXp: number
+}
+
+export async function getWeeklyLeaders(limit = 20): Promise<LeaderRow[]> {
+  const users = await prisma.user.findMany({
+    where: { weeklyXp: { gt: 0 } },
+    orderBy: [{ weeklyXp: 'desc' }, { createdAt: 'asc' }],
+    take: limit,
+    select: {
+      id: true,
+      nickname: true,
+      friendCode: true,
+      tier: true,
+      weeklyXp: true,
+    },
+  })
+  return users.map((u, i) => ({
+    rank: i + 1,
+    userId: u.id,
+    nickname: u.nickname,
+    friendCode: u.friendCode,
+    tier: u.tier,
+    weeklyXp: u.weeklyXp,
+  }))
 }

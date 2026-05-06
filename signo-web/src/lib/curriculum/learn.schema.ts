@@ -41,7 +41,12 @@ export const ClearLessonResult = z.object({
     lastClearDate: z.string(),
     event: z.enum(['continued', 'reset', 'started', 'same-day']),
   }),
-  badgesEarned: z.array(z.string()).optional(),
+  badgesEarned: z.array(z.object({
+    slug: z.string(),
+    title: z.string(),
+    description: z.string(),
+    emoji: z.string(),
+  })).optional(),
 })
 
 export type ClearLessonResult = z.infer<typeof ClearLessonResult>

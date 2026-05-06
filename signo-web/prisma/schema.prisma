@@ -31,6 +31,28 @@ model User {
   attempts       Attempt[]
   clears         LessonClear[]
   daily          DailyStat[]
+  badges         UserBadge[]
+}
+
+model Badge {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  title       String
+  description String
+  emoji       String
+  sortOrder   Int         @default(0)
+  unlocks     UserBadge[]
+}
+
+model UserBadge {
+  id         String   @id @default(cuid())
+  userId     String
+  badgeId    String
+  unlockedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+  badge      Badge    @relation(fields: [badgeId], references: [id])
+
+  @@unique([userId, badgeId])
 }
 
 model Unit {

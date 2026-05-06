@@ -93,38 +93,77 @@ function Metric({ label, value, hint, accent = false }: { label: string; value: 
 function QuickActions() {
   return (
     <div className="grid grid-cols-2 gap-3">
-      <a href="/mistakes" className="group">
-        <Card density="tight" className="flex items-center gap-3 group-hover:-translate-y-[1px] transition-transform">
-          <div className="h-10 w-10 rounded-full bg-ochre/15 flex items-center justify-center text-ochre">
-            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" aria-hidden>
-              <path d="M4 4 L 20 4 L 20 20 L 4 20 Z M 4 9 L 20 9" fill="none" stroke="currentColor" strokeWidth="1.5" />
-              <circle cx="7" cy="6.5" r="0.8" />
-              <path d="M8 12 L 16 12 M 8 15 L 14 15" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-            </svg>
-          </div>
-          <div>
-            <div className="text-[15px] font-medium text-ink">错题本</div>
-            <div className="text-[11px] text-bark/55">被风吹落的那些叶子</div>
-          </div>
-        </Card>
-      </a>
-      <a href="/review" className="group">
-        <Card density="tight" className="flex items-center gap-3 group-hover:-translate-y-[1px] transition-transform">
-          <div className="h-10 w-10 rounded-full bg-moss/15 flex items-center justify-center text-moss">
-            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
-              <path d="M4 12 a 8 8 0 0 1 14 -5" />
-              <path d="M20 12 a 8 8 0 0 1 -14 5" />
-              <path d="M18 4 L 18 7 L 15 7" />
-              <path d="M6 20 L 6 17 L 9 17" />
-            </svg>
-          </div>
-          <div>
-            <div className="text-[15px] font-medium text-ink">今日复习</div>
-            <div className="text-[11px] text-bark/55">把错过的叶子拾起来</div>
-          </div>
-        </Card>
-      </a>
+      <ActionTile href="/mistakes" accent="ochre" title="错题本" hint="被风吹落的叶子" icon={<IconBook />} />
+      <ActionTile href="/review" accent="moss" title="今日复习" hint="把错过的拾起来" icon={<IconRefresh />} />
+      <ActionTile href="/badges" accent="hazel" title="徽章馆" hint="藏在林中的奖章" icon={<IconMedal />} />
+      <ActionTile href="/leaderboard" accent="mist" title="本周排行" hint="谁走得最远" icon={<IconLeaderboard />} />
     </div>
+  )
+}
+
+function ActionTile({
+  href, accent, title, hint, icon,
+}: {
+  href: string
+  accent: 'ochre' | 'moss' | 'hazel' | 'mist'
+  title: string
+  hint: string
+  icon: React.ReactNode
+}) {
+  const color: Record<typeof accent, string> = {
+    ochre: 'bg-ochre/15 text-ochre',
+    moss: 'bg-moss/15 text-moss',
+    hazel: 'bg-hazel/15 text-hazel',
+    mist: 'bg-mist/25 text-ink',
+  }
+  return (
+    <a href={href} className="group">
+      <Card density="tight" className="flex items-center gap-3 group-hover:-translate-y-[1px] transition-transform h-full">
+        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${color[accent]}`}>{icon}</div>
+        <div className="min-w-0">
+          <div className="text-[14px] font-medium text-ink truncate">{title}</div>
+          <div className="text-[11px] text-bark/55 truncate">{hint}</div>
+        </div>
+      </Card>
+    </a>
+  )
+}
+
+function IconBook() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
+      <path d="M4 4 L 20 4 L 20 20 L 4 20 Z M 4 9 L 20 9" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="7" cy="6.5" r="0.8" />
+      <path d="M8 12 L 16 12 M 8 15 L 14 15" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+    </svg>
+  )
+}
+function IconRefresh() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+      <path d="M4 12 a 8 8 0 0 1 14 -5" />
+      <path d="M20 12 a 8 8 0 0 1 -14 5" />
+      <path d="M18 4 L 18 7 L 15 7" />
+      <path d="M6 20 L 6 17 L 9 17" />
+    </svg>
+  )
+}
+function IconMedal() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
+      <circle cx="12" cy="15" r="5.5" />
+      <path d="M9 3 L 12 10 L 15 3" />
+      <path d="M11 13.5 L 12 12 L 13 13.5 L 14.5 14 L 13.2 15.2 L 13.5 17 L 12 16 L 10.5 17 L 10.8 15.2 L 9.5 14 Z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+function IconLeaderboard() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
+      <rect x="3" y="12" width="4" height="9" rx="1" />
+      <rect x="10" y="7" width="4" height="14" rx="1" />
+      <rect x="17" y="14" width="4" height="7" rx="1" />
+    </svg>
   )
 }
 

@@ -1,4 +1,5 @@
 import type { StreakDelta } from './streak'
+import type { EarnedBadge } from '@/lib/badges/service'
 
 export type GradedAnswer = {
   questionId: string
@@ -14,8 +15,7 @@ export type ClearResult = {
   stars: 1 | 2 | 3
   streak: StreakDelta
   totalXp: number
-  /** Phase B 回填 */
-  badgesEarned?: string[]
+  badgesEarned?: EarnedBadge[]
 }
 
 export type OnLessonClearArgs = {

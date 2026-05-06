@@ -43,6 +43,14 @@ const CATALOG: Category[] = [
   },
 ]
 
+const BADGES = [
+  { slug: 'first-clear',   title: '第一片叶子', description: '完成了你的第一关。',         emoji: '🍃', sortOrder: 1 },
+  { slug: 'first-perfect', title: '三叶齐光',   description: '首次满分通过一关。',         emoji: '✨', sortOrder: 2 },
+  { slug: 'streak-3',      title: '三日不辍',   description: '连续 3 天都走进了森林。',    emoji: '🔥', sortOrder: 3 },
+  { slug: 'xp-100',        title: '百叶入怀',   description: '累计获得 100 XP。',           emoji: '🌿', sortOrder: 4 },
+  { slug: 'reviewer',      title: '拾叶者',     description: '完成了一次复习关。',         emoji: '🧺', sortOrder: 5 },
+]
+
 async function resetCurriculum() {
   await db.attempt.deleteMany()
   await db.lessonClear.deleteMany()
@@ -52,8 +60,19 @@ async function resetCurriculum() {
   await db.media.deleteMany()
 }
 
+async function seedBadges() {
+  for (const b of BADGES) {
+    await db.badge.upsert({
+      where: { slug: b.slug },
+      update: { title: b.title, description: b.description, emoji: b.emoji, sortOrder: b.sortOrder },
+      create: b,
+    })
+  }
+}
+
 async function main() {
   await resetCurriculum()
+  await seedBadges()
 
   const unit = await db.unit.create({
     data: {
@@ -116,8 +135,9 @@ async function main() {
   const unitCount = await db.unit.count()
   const lessonCount = await db.lesson.count()
   const questionCount = await db.question.count()
+  const badgeCount = await db.badge.count()
   console.log(
-    `seed: ok (units=${unitCount}, lessons=${lessonCount}, questions=${questionCount})`,
+    `seed: ok (units=${unitCount}, lessons=${lessonCount}, questions=${questionCount}, badges=${badgeCount})`,
   )
 }
 
