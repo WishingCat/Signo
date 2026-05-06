@@ -37,7 +37,9 @@ export default async function RootLayout({
           <nav className="flex items-center gap-3 text-[13px]">
             {user ? (
               <>
-                <TierBadge tier={user.tier} />
+                <a href={`/profile/${user.friendCode}`} className="hover:opacity-90 transition-opacity">
+                  <TierBadge tier={user.tier} />
+                </a>
                 <form action="/api/auth/logout" method="post">
                   <button
                     type="submit"

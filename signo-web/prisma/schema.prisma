@@ -55,6 +55,17 @@ model UserBadge {
   @@unique([userId, badgeId])
 }
 
+model Friendship {
+  id        String   @id @default(cuid())
+  userAId   String                            // canonical ordered: userAId < userBId
+  userBId   String
+  createdAt DateTime @default(now())
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+}
+
 model Unit {
   id          String   @id @default(cuid())
   order       Int

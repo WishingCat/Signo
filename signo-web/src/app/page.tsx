@@ -17,7 +17,7 @@ export default async function Home() {
       {user && progress ? (
         <>
           <Dashboard nickname={user.nickname} progress={progress} />
-          <QuickActions />
+          <QuickActions myFriendCode={user.friendCode} />
         </>
       ) : (
         <GuestInvite />
@@ -90,13 +90,15 @@ function Metric({ label, value, hint, accent = false }: { label: string; value: 
   )
 }
 
-function QuickActions() {
+function QuickActions({ myFriendCode }: { myFriendCode: string }) {
   return (
     <div className="grid grid-cols-2 gap-3">
       <ActionTile href="/mistakes" accent="ochre" title="错题本" hint="被风吹落的叶子" icon={<IconBook />} />
       <ActionTile href="/review" accent="moss" title="今日复习" hint="把错过的拾起来" icon={<IconRefresh />} />
       <ActionTile href="/badges" accent="hazel" title="徽章馆" hint="藏在林中的奖章" icon={<IconMedal />} />
       <ActionTile href="/leaderboard" accent="mist" title="本周排行" hint="谁走得最远" icon={<IconLeaderboard />} />
+      <ActionTile href="/friends" accent="moss" title="林友" hint="一起走过的同伴" icon={<IconFriends />} />
+      <ActionTile href={`/profile/${myFriendCode}`} accent="hazel" title="我的主页" hint="足迹与徽章" icon={<IconHome />} />
     </div>
   )
 }
@@ -163,6 +165,25 @@ function IconLeaderboard() {
       <rect x="3" y="12" width="4" height="9" rx="1" />
       <rect x="10" y="7" width="4" height="14" rx="1" />
       <rect x="17" y="14" width="4" height="7" rx="1" />
+    </svg>
+  )
+}
+function IconFriends() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
+      <circle cx="9" cy="8" r="3" />
+      <circle cx="16" cy="9" r="2.5" />
+      <path d="M3 20 C 3 16, 6 14, 9 14 C 12 14, 15 16, 15 20" />
+      <path d="M15 20 C 15 17.5, 17 16, 19 16 C 21 16, 22 17.5, 22 20" />
+    </svg>
+  )
+}
+function IconHome() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 11 L 12 4 L 20 11" />
+      <path d="M6 10 L 6 20 L 18 20 L 18 10" />
+      <path d="M10 20 L 10 15 L 14 15 L 14 20" />
     </svg>
   )
 }
