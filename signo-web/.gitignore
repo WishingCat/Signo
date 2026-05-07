@@ -50,3 +50,6 @@ dev.db-journal
 # playwright
 /playwright-report/
 /test-results/
+
+# sign-db images: committed so fresh clones do not need `pnpm sign-db:bootstrap`.
+# (Folder kept tracked — do not gitignore.)

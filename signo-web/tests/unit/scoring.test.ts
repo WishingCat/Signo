@@ -15,14 +15,13 @@ describe('lessonXp', () => {
 })
 
 describe('lessonStars', () => {
-  it('3 stars for perfect', () => {
+  it('3 stars whenever the lesson has at least one question (过关即 3 星)', () => {
     expect(lessonStars({ total: 4, correct: 4 })).toBe(3)
+    expect(lessonStars({ total: 5, correct: 3 })).toBe(3)
+    expect(lessonStars({ total: 5, correct: 0 })).toBe(3)
   })
-  it('2 stars when ratio >= 0.6', () => {
-    expect(lessonStars({ total: 5, correct: 3 })).toBe(2)
-  })
-  it('1 star when ratio < 0.6', () => {
-    expect(lessonStars({ total: 5, correct: 2 })).toBe(1)
+  it('1 star for degenerate empty lesson', () => {
+    expect(lessonStars({ total: 0, correct: 0 })).toBe(1)
   })
 })
 

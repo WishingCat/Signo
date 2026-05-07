@@ -1,47 +1,13 @@
 import 'dotenv/config'
 import { PrismaClient } from '../src/generated/prisma/client'
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
+import { CHAPTERS } from './seed-data'
+import { getMeanings, getSign, getImageAbsolutePath } from '../src/lib/signDb/service'
 
 const adapter = new PrismaBetterSqlite3({
   url: process.env.DATABASE_URL ?? 'file:./dev.db',
 })
 const db = new PrismaClient({ adapter })
-
-type Item = { file: string; label: string }
-type Category = { key: string; title: string; items: Item[] }
-
-const CATALOG: Category[] = [
-  {
-    key: 'top',
-    title: '上衣',
-    items: [
-      { file: 'top-1.jpg', label: '羽绒服' },
-      { file: 'top-2.jpg', label: 'T 恤' },
-      { file: 'top-3.jpg', label: '毛衣' },
-      { file: 'top-4.jpg', label: '衬衫' },
-    ],
-  },
-  {
-    key: 'bottom',
-    title: '下装',
-    items: [
-      { file: 'bottom-1.jpg', label: '牛仔裤' },
-      { file: 'bottom-2.jpg', label: '毛裤' },
-      { file: 'bottom-3.jpg', label: '短裤' },
-      { file: 'bottom-4.jpg', label: '裙子' },
-    ],
-  },
-  {
-    key: 'shoe',
-    title: '鞋类',
-    items: [
-      { file: 'shoe-1.jpg', label: '皮鞋' },
-      { file: 'shoe-2.jpg', label: '高跟鞋' },
-      { file: 'shoe-3.jpg', label: '拖鞋' },
-      { file: 'shoe-4.png', label: '靴子' },
-    ],
-  },
-]
 
 const BADGES = [
   { slug: 'first-clear',   title: '第一片叶子', description: '完成了你的第一关。',         emoji: '🍃', sortOrder: 1 },
@@ -50,6 +16,38 @@ const BADGES = [
   { slug: 'xp-100',        title: '百叶入怀',   description: '累计获得 100 XP。',           emoji: '🌿', sortOrder: 4 },
   { slug: 'reviewer',      title: '拾叶者',     description: '完成了一次复习关。',         emoji: '🧺', sortOrder: 5 },
 ]
+
+const LICENSE = '改编自《国家通用手语词典》· 非商用'
+
+function mulberry32(seed: number) {
+  let a = seed >>> 0
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0
+    let t = a
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function pickN<T>(pool: T[], n: number, rand: () => number): T[] {
+  const copy = pool.slice()
+  const out: T[] = []
+  while (out.length < n && copy.length) {
+    const i = Math.floor(rand() * copy.length)
+    out.push(copy.splice(i, 1)[0])
+  }
+  return out
+}
+
+function shuffle<T>(arr: T[], rand: () => number): T[] {
+  const a = arr.slice()
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
 
 async function resetCurriculum() {
   await db.attempt.deleteMany()
@@ -70,80 +68,84 @@ async function seedBadges() {
   }
 }
 
+/** Resolve a signId → its primary label (first meaning).
+ *  Fail-fast if sign missing or image missing — never silently ship a broken question. */
+function labelOf(signId: number): string {
+  const sign = getSign(signId)
+  if (!sign) throw new Error(`seed: signId ${signId} not found in sign_themed.db`)
+  if (!getImageAbsolutePath(signId)) {
+    throw new Error(`seed: image missing for signId ${signId} (${sign.imagePath})`)
+  }
+  const meanings = getMeanings(signId)
+  if (meanings.length === 0) throw new Error(`seed: signId ${signId} has no meanings`)
+  return meanings[0].text
+}
+
+async function seedChapters() {
+  const rand = mulberry32(Number(process.env.SEED_SEED ?? 42))
+  for (const chapter of CHAPTERS) {
+    const unit = await db.unit.create({
+      data: {
+        order: chapter.order,
+        title: chapter.title,
+        description: chapter.description,
+        iconKey: chapter.iconKey,
+      },
+    })
+    for (const lessonSpec of chapter.lessons) {
+      const lesson = await db.lesson.create({
+        data: { unitId: unit.id, order: lessonSpec.order, title: lessonSpec.title },
+      })
+      const poolLabels = new Map<number, string>()
+      for (const id of lessonSpec.signIds) poolLabels.set(id, labelOf(id))
+      for (const [qOrder, signId] of lessonSpec.signIds.entries()) {
+        const sign = getSign(signId)!
+        const correct = poolLabels.get(signId)!
+        const distractorCandidates = [...poolLabels.entries()]
+          .filter(([id, text]) => id !== signId && text !== correct)
+          .map(([, text]) => text)
+        const uniqueDistractors = Array.from(new Set(distractorCandidates))
+        if (uniqueDistractors.length < 3) {
+          throw new Error(
+            `seed: lesson "${lessonSpec.title}" not enough unique distractors for "${correct}" (have ${uniqueDistractors.length})`,
+          )
+        }
+        const distractors = pickN(uniqueDistractors, 3, rand)
+        const choices = shuffle([correct, ...distractors], rand)
+        const answerIndex = choices.indexOf(correct)
+        const media = await db.media.create({
+          data: {
+            kind: 'image',
+            path: `/api/signs/image/${signId}`,
+            license: LICENSE,
+            signer: sign.sourceEntry ?? null,
+          },
+        })
+        await db.question.create({
+          data: {
+            lessonId: lesson.id,
+            order: qOrder,
+            type: 'sign2word',
+            promptText: null,
+            promptMediaId: media.id,
+            choicesJson: JSON.stringify(choices),
+            answerIndex,
+            explanation: sign.description,
+          },
+        })
+      }
+    }
+  }
+}
+
 async function main() {
   await resetCurriculum()
   await seedBadges()
-
-  const unit = await db.unit.create({
-    data: {
-      order: 1,
-      title: '日常穿搭',
-      description: '入门常用服饰词（占位素材，待正式补拍）',
-      iconKey: 'clothes',
-    },
-  })
-
-  // Lessons 1-3: sign2word（看手语选词）—— 上衣 / 下装 / 鞋类
-  for (const [lessonOrder, category] of CATALOG.entries()) {
-    const lesson = await db.lesson.create({
-      data: { unitId: unit.id, order: lessonOrder + 1, title: category.title },
-    })
-    const labels = category.items.map((i) => i.label)
-
-    for (const [qOrder, item] of category.items.entries()) {
-      const media = await db.media.create({
-        data: {
-          kind: 'image',
-          path: `/signs/${item.file}`,
-          license: '临时自用占位图，正式上线前替换',
-        },
-      })
-      await db.question.create({
-        data: {
-          lessonId: lesson.id,
-          order: qOrder,
-          type: 'sign2word',
-          promptText: null,
-          promptMediaId: media.id,
-          choicesJson: JSON.stringify(labels),
-          answerIndex: qOrder,
-        },
-      })
-    }
-  }
-
-  // Lesson 4: word2sign（看词选手语）—— 使用"上衣"四张图作为选项
-  const tops = CATALOG[0]
-  const topPaths = tops.items.map((i) => `/signs/${i.file}`)
-  const lesson4 = await db.lesson.create({
-    data: { unitId: unit.id, order: 4, title: '反向练习 · 上衣' },
-  })
-  for (const [qOrder, item] of tops.items.entries()) {
-    await db.question.create({
-      data: {
-        lessonId: lesson4.id,
-        order: qOrder,
-        type: 'word2sign',
-        promptText: item.label,
-        promptMediaId: null,
-        choicesJson: JSON.stringify(topPaths),
-        answerIndex: qOrder,
-      },
-    })
-  }
-
-  const unitCount = await db.unit.count()
-  const lessonCount = await db.lesson.count()
-  const questionCount = await db.question.count()
-  const badgeCount = await db.badge.count()
-  console.log(
-    `seed: ok (units=${unitCount}, lessons=${lessonCount}, questions=${questionCount}, badges=${badgeCount})`,
-  )
+  await seedChapters()
+  const [u, l, q, m, b] = await Promise.all([
+    db.unit.count(), db.lesson.count(), db.question.count(), db.media.count(), db.badge.count(),
+  ])
+  console.log(`seed: ok (units=${u}, lessons=${l}, questions=${q}, media=${m}, badges=${b})`)
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exitCode = 1
-  })
-  .finally(() => db.$disconnect())
+main().catch((e) => { console.error(e); process.exitCode = 1 }).finally(() => db.$disconnect())

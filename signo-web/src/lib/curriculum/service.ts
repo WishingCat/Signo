@@ -68,6 +68,24 @@ export async function gradeAnswer(
   return { correct: q.answerIndex === choiceIndex }
 }
 
+/** 前端逐题反馈用：返回是否正确 + 正解索引 + 打法解释。
+ *  不落 Attempt 行 —— Attempt 只在 onLessonClear / onReviewClear 写入。 */
+export async function gradeQuestionDetailed(
+  questionId: string,
+  choiceIndex: number,
+): Promise<{ isCorrect: boolean; correctIndex: number; explanation: string | null } | null> {
+  const q = await prisma.question.findUnique({
+    where: { id: questionId },
+    select: { answerIndex: true, explanation: true },
+  })
+  if (!q) return null
+  return {
+    isCorrect: q.answerIndex === choiceIndex,
+    correctIndex: q.answerIndex,
+    explanation: q.explanation,
+  }
+}
+
 export async function getQuestionsMapForLesson(lessonId: string) {
   const qs = await prisma.question.findMany({
     where: { lessonId },

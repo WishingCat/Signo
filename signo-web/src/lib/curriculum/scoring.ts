@@ -8,12 +8,10 @@ export function lessonXp({ total, correct }: GradeSummary): number {
   return SCORING.BASE_XP + (perfect ? SCORING.PERFECT_BONUS : 0)
 }
 
-export function lessonStars({ total, correct }: GradeSummary): 1 | 2 | 3 {
-  if (total === 0) return 1
-  const ratio = correct / total
-  if (ratio >= SCORING.STAR_PERFECT_THRESHOLD) return 3
-  if (ratio >= SCORING.STAR_PASSING_THRESHOLD) return 2
-  return 1
+export function lessonStars({ total }: GradeSummary): 1 | 2 | 3 {
+  // 过关即 3 星：只要这一关有题，完成就满星。
+  // 回炉到对机制保证用户到达 onLessonClear 时必定全对；星数不再承担难度评估职责。
+  return total > 0 ? 3 : 1
 }
 
 /** 通关一关获得的落叶（基础 + 全对加成）。 */
