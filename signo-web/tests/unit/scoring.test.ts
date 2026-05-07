@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { lessonXp, lessonStars } from '@/lib/curriculum/scoring'
+import { lessonXp, lessonStars, lessonLeaves, reviewLeaves } from '@/lib/curriculum/scoring'
 
 describe('lessonXp', () => {
   it('base xp for any non-empty clear', () => {
@@ -23,5 +23,30 @@ describe('lessonStars', () => {
   })
   it('1 star when ratio < 0.6', () => {
     expect(lessonStars({ total: 5, correct: 2 })).toBe(1)
+  })
+})
+
+describe('lessonLeaves', () => {
+  it('base 5 落叶 for any non-perfect clear', () => {
+    expect(lessonLeaves({ total: 4, correct: 0 })).toBe(5)
+    expect(lessonLeaves({ total: 4, correct: 3 })).toBe(5)
+  })
+  it('perfect bonus +5 → 10 落叶', () => {
+    expect(lessonLeaves({ total: 4, correct: 4 })).toBe(10)
+  })
+  it('handles total=0 gracefully', () => {
+    expect(lessonLeaves({ total: 0, correct: 0 })).toBe(5)
+  })
+})
+
+describe('reviewLeaves', () => {
+  it('1 落叶 per correct answer', () => {
+    expect(reviewLeaves({ total: 6, correct: 4 })).toBe(4)
+  })
+  it('perfect review +2 bonus', () => {
+    expect(reviewLeaves({ total: 6, correct: 6 })).toBe(8)
+  })
+  it('zero-total review yields 0', () => {
+    expect(reviewLeaves({ total: 0, correct: 0 })).toBe(0)
   })
 })

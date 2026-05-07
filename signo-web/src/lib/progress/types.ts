@@ -15,6 +15,10 @@ export type ClearResult = {
   stars: 1 | 2 | 3
   streak: StreakDelta
   totalXp: number
+  /** 本次结算获得的落叶（lessonLeaves / reviewLeaves） */
+  leavesEarned: number
+  /** 写入后用户的落叶余额 */
+  totalLeaves: number
   badgesEarned?: EarnedBadge[]
 }
 

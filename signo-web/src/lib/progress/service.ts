@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db'
-import { lessonXp, lessonStars } from '@/lib/curriculum/scoring'
+import { lessonXp, lessonStars, lessonLeaves, reviewLeaves } from '@/lib/curriculum/scoring'
 import { bumpStreakOnClear } from './streak'
 import { awardBadges } from '@/lib/badges/service'
 import type { ClearResult, GradedAnswer, OnLessonClearArgs } from './types'
@@ -28,6 +28,7 @@ export async function onLessonClear(
 
   const xp = lessonXp({ total, correct })
   const stars = lessonStars({ total, correct })
+  const leavesEarned = lessonLeaves({ total, correct })
 
   await prisma.lessonClear.create({
     data: { userId, lessonId, stars },
@@ -36,18 +37,19 @@ export async function onLessonClear(
   const today = todayIsoDate()
   await prisma.dailyStat.upsert({
     where: { userId_date: { userId, date: today } },
-    create: { userId, date: today, xp, lessonsCleared: 1 },
-    update: { xp: { increment: xp }, lessonsCleared: { increment: 1 } },
+    create: { userId, date: today, xp, leaves: leavesEarned, lessonsCleared: 1 },
+    update: { xp: { increment: xp }, leaves: { increment: leavesEarned }, lessonsCleared: { increment: 1 } },
   })
 
-  // 更新用户总 XP / 周 XP
+  // 更新用户总 XP / 周 XP / 落叶
   const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: {
       totalXp: { increment: xp },
       weeklyXp: { increment: xp },
+      leaves: { increment: leavesEarned },
     },
-    select: { totalXp: true },
+    select: { totalXp: true, leaves: true },
   })
 
   // 连胜推进
@@ -70,6 +72,8 @@ export async function onLessonClear(
     stars,
     streak,
     totalXp: updatedUser.totalXp,
+    leavesEarned,
+    totalLeaves: updatedUser.leaves,
     badgesEarned,
   }
 }
@@ -101,18 +105,23 @@ export async function onReviewClear(args: {
   // 复习关 XP 按比例给，较正式关稍低（以鼓励先完成正课）：每对 2 XP，全对额外 +3
   const xp = Math.max(0, correct * 2) + (correct === total && total > 0 ? 3 : 0)
   const stars = lessonStars({ total, correct })
+  const leavesEarned = reviewLeaves({ total, correct })
 
   const today = todayIsoDate()
   await prisma.dailyStat.upsert({
     where: { userId_date: { userId, date: today } },
-    create: { userId, date: today, xp, lessonsCleared: 0 },
-    update: { xp: { increment: xp } },
+    create: { userId, date: today, xp, leaves: leavesEarned, lessonsCleared: 0 },
+    update: { xp: { increment: xp }, leaves: { increment: leavesEarned } },
   })
 
   const updated = await prisma.user.update({
     where: { id: userId },
-    data: { totalXp: { increment: xp }, weeklyXp: { increment: xp } },
-    select: { totalXp: true },
+    data: {
+      totalXp: { increment: xp },
+      weeklyXp: { increment: xp },
+      leaves: { increment: leavesEarned },
+    },
+    select: { totalXp: true, leaves: true },
   })
 
   const streak = await bumpStreakOnClear(userId, today)
@@ -126,7 +135,7 @@ export async function onReviewClear(args: {
     isLessonPerfect: false,
   })
 
-  return { xp, correct, total, stars, streak, totalXp: updated.totalXp, badgesEarned }
+  return { xp, correct, total, stars, streak, totalXp: updated.totalXp, leavesEarned, totalLeaves: updated.leaves, badgesEarned }
 }
 
 export async function getTodayXp(userId: string): Promise<number> {
@@ -140,6 +149,7 @@ export type UserProgressSummary = {
   todayXp: number
   totalXp: number
   weeklyXp: number
+  leaves: number
   currentStreak: number
   bestStreak: number
   tier: number
@@ -153,6 +163,7 @@ export async function getUserProgress(userId: string): Promise<UserProgressSumma
       select: {
         totalXp: true,
         weeklyXp: true,
+        leaves: true,
         currentStreak: true,
         bestStreak: true,
         tier: true,
@@ -168,6 +179,7 @@ export async function getUserProgress(userId: string): Promise<UserProgressSumma
     todayXp: todayStat?.xp ?? 0,
     totalXp: u.totalXp,
     weeklyXp: u.weeklyXp,
+    leaves: u.leaves,
     currentStreak: u.currentStreak,
     bestStreak: u.bestStreak,
     tier: u.tier,

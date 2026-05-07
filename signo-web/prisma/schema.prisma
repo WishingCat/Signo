@@ -24,6 +24,7 @@ model User {
   pkLosses       Int           @default(0)
   totalXp        Int           @default(0)
   weeklyXp       Int           @default(0)
+  leaves         Int           @default(0)      // 落叶货币
   currentStreak  Int           @default(0)
   bestStreak     Int           @default(0)
   lastClearDate  String?                        // YYYY-MM-DD, 最近一次通关日
@@ -32,6 +33,7 @@ model User {
   clears         LessonClear[]
   daily          DailyStat[]
   badges         UserBadge[]
+  teamMemberships TeamMember[]
 }
 
 model Badge {
@@ -132,11 +134,63 @@ model LessonClear {
 }
 
 model DailyStat {
-  userId         String
-  date           String // YYYY-MM-DD
-  xp             Int    @default(0)
-  lessonsCleared Int    @default(0)
-  user           User   @relation(fields: [userId], references: [id])
+  userId               String
+  date                 String   // YYYY-MM-DD
+  xp                   Int      @default(0)
+  leaves               Int      @default(0)
+  lessonsCleared       Int      @default(0)
+  dailyQuestClaimedAt  DateTime?
+  user                 User     @relation(fields: [userId], references: [id])
 
   @@id([userId, date])
+}
+
+// ——— 团队协作（每日任务全员达成则全员获得当天 XP +19~21% 加成） ———
+
+model Team {
+  id        String           @id @default(cuid())
+  name      String
+  ownerId   String
+  createdAt DateTime         @default(now())
+  members   TeamMember[]
+  invites   TeamInvite[]
+  bonuses   TeamBonusEvent[]
+}
+
+model TeamMember {
+  id       String   @id @default(cuid())
+  teamId   String
+  userId   String
+  joinedAt DateTime @default(now())
+  team     Team     @relation(fields: [teamId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+model TeamInvite {
+  id          String    @id @default(cuid())
+  teamId      String
+  inviteeId   String
+  inviterId   String
+  status      String    @default("pending") // pending | accepted | declined
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
+  team        Team      @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, inviteeId])
+  @@index([inviteeId, status])
+}
+
+model TeamBonusEvent {
+  id          String   @id @default(cuid())
+  teamId      String
+  date        String   // YYYY-MM-DD（与 DailyStat.date 同格式）
+  pctBps      Int      // basis points: 1900 / 2000 / 2100
+  memberCount Int
+  createdAt   DateTime @default(now())
+  team        Team     @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, date])
 }

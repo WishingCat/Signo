@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Mascot, type MascotName } from '@/components/forest/Mascot'
 import { Leaf } from '@/components/forest/Leaf'
 import { Firefly } from '@/components/forest/Firefly'
+import { LeafCoin } from '@/components/forest/LeafCoin'
 import { cn } from '@/lib/utils'
 import type { ClearLessonResult } from '@/lib/curriculum/learn.schema'
 
@@ -70,9 +71,10 @@ export function CompletionScreen({
         <div className="flex justify-center gap-1 mb-4">
           {[1, 2, 3].map((s) => <StarIcon key={s} lit={s <= result.stars} index={s} />)}
         </div>
-        <div className="flex items-end justify-center gap-6 mb-4">
+        <div className="grid grid-cols-4 gap-3 mb-4">
           <Stat label="答对" value={`${result.correct} / ${result.total}`} />
           <Stat label="获得" value={`+${result.xp} XP`} accent testId="xp-gain" />
+          <LeafStat earned={result.leavesEarned} />
           <Stat label="连胜" value={`${result.streak.currentStreak} 天`} />
         </div>
         <Button size="lg" className="w-full" onClick={onBack}>{backLabel}</Button>
@@ -86,11 +88,23 @@ function Stat({ label, value, accent = false, testId }: { label: string; value: 
     <div className="text-center">
       <div
         data-testid={testId}
-        className={cn('leading-none tabular-nums', accent ? 'text-[28px] text-hazel font-medium' : 'text-[20px] text-ink')}
+        className={cn('leading-none tabular-nums', accent ? 'text-[24px] text-hazel font-medium' : 'text-[18px] text-ink')}
       >
         {value}
       </div>
       <div className="text-[10px] tracking-[0.25em] uppercase text-bark/50 mt-1">{label}</div>
+    </div>
+  )
+}
+
+function LeafStat({ earned }: { earned: number }) {
+  return (
+    <div className="text-center" data-testid="leaves-gain">
+      <div className="leading-none tabular-nums text-[18px] text-ink inline-flex items-center justify-center gap-1">
+        <span>+{earned}</span>
+        <LeafCoin iconOnly size={18} />
+      </div>
+      <div className="text-[10px] tracking-[0.25em] uppercase text-bark/50 mt-1">落叶</div>
     </div>
   )
 }

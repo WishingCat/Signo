@@ -35,6 +35,8 @@ export const ClearLessonResult = z.object({
   total: z.number().int(),
   stars: z.union([z.literal(1), z.literal(2), z.literal(3)]),
   totalXp: z.number().int(),
+  leavesEarned: z.number().int(),
+  totalLeaves: z.number().int(),
   streak: z.object({
     currentStreak: z.number().int(),
     bestStreak: z.number().int(),

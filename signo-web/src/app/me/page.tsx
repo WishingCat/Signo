@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { SketchDivider } from '@/components/forest/SketchDivider'
 import { Mascot, TIER_MASCOT, MASCOT_LABEL } from '@/components/forest/Mascot'
 import { StreakFlame } from '@/components/forest/StreakFlame'
+import { LeafCoin } from '@/components/forest/LeafCoin'
 import { Vine } from '@/components/forest/Vine'
 import { Berry } from '@/components/forest/Berry'
 import { getSessionUser } from '@/lib/auth/session'
@@ -41,11 +42,18 @@ export default async function MePage() {
             <p className="text-[12px] text-bark/60 mt-0.5">
               <span className="text-moss font-medium">{MASCOT_LABEL[mascot]}</span> · L{progress.tier}
             </p>
-            <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-oat border border-bark/15 px-3 py-1">
-              <span className="text-[10px] tracking-[0.2em] uppercase text-bark/50">好友码</span>
-              <span className="text-[12px] tracking-[0.25em] text-ink font-medium tabular-nums">
-                {user.friendCode}
-              </span>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 rounded-full bg-oat border border-bark/15 px-3 py-1">
+                <span className="text-[10px] tracking-[0.2em] uppercase text-bark/50">好友码</span>
+                <span className="text-[12px] tracking-[0.25em] text-ink font-medium tabular-nums">
+                  {user.friendCode}
+                </span>
+              </div>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-moss/12 border border-moss/30 px-3 py-1 text-[12px] text-ink">
+                <LeafCoin iconOnly size={16} />
+                <span className="tabular-nums font-medium">{progress.leaves}</span>
+                <span className="text-bark/55 text-[11px]">落叶</span>
+              </div>
             </div>
           </div>
         </div>
