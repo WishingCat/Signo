@@ -34,6 +34,9 @@ model User {
   daily          DailyStat[]
   badges         UserBadge[]
   teamMemberships TeamMember[]
+  pkInvitesSent     PkInvite[]  @relation("PkInviteFromUser")
+  pkInvitesReceived PkInvite[]  @relation("PkInviteToUser")
+  pkDailyXp         PkDailyXp[]
 }
 
 model Badge {
@@ -193,4 +196,57 @@ model TeamBonusEvent {
   team        Team     @relation(fields: [teamId], references: [id])
 
   @@unique([teamId, date])
+}
+
+// ——— 知识竞赛 · 实时主题 PK（v1） ———
+
+model PkInvite {
+  id          String   @id @default(cuid())
+  inviterId   String
+  inviteeId   String
+  theme       String   // 常用语 | 数字 | 身体
+  mode        String   // casual | timed | hell
+  modeConfig  String   // JSON e.g. {"totalSec":60} for timed; "{}" otherwise
+  status      String   @default("pending") // pending | accepted | declined | timeout
+  matchId     String?
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  respondedAt DateTime?
+  inviter     User     @relation("PkInviteFromUser", fields: [inviterId], references: [id])
+  invitee     User     @relation("PkInviteToUser",   fields: [inviteeId], references: [id])
+
+  @@index([inviteeId, status])
+  @@index([inviterId, status])
+}
+
+model PkMatch {
+  id            String    @id @default(cuid())
+  theme         String
+  mode          String
+  modeConfig    String
+  aId           String    // canonicalPair 顺序
+  bId           String
+  aScore        Int       @default(0)
+  bScore        Int       @default(0)
+  aXpAwarded    Int       @default(0)
+  bXpAwarded    Int       @default(0)
+  winnerId      String?   // null = 平局或进行中
+  endedReason   String?   // finished | quit-a | quit-b | timeout
+  startedAt     DateTime  @default(now())
+  endedAt       DateTime?
+  questionsJson String    // [{signId, choices[], answerIndex}] × 15
+
+  @@index([aId, startedAt])
+  @@index([bId, startedAt])
+}
+
+model PkDailyXp {
+  id     String @id @default(cuid())
+  userId String
+  date   String // YYYY-MM-DD
+  count  Int    @default(0) // 已计入 XP 的对局数（封顶 3）
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@index([userId, date])
 }

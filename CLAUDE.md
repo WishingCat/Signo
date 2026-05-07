@@ -76,6 +76,7 @@ src/lib/db.ts           ← Single PrismaClient, with better-sqlite3 driver adap
 | `auth/` | `User`, sessions | `service.ts` (registerUser/authenticateUser), `session.ts` (getSessionUser via cookie) |
 | `curriculum/` | `Unit/Lesson/Question/Media` | `service.ts` (getLessonTree, getQuestionsForLesson, getRecentMistakes, getReviewSet, gradeAnswer, **gradeQuestionDetailed** for per-question feedback), `lessonQueue.ts` (pure `advanceQueue`/`correctCount` for the wrong-→requeue flow) |
 | `signDb/` | **Read-only** wrapper around `data/sign-database/sign_themed.db` (《国家通用手语词典》). | `service.ts` (listSignsByTheme, findSignsByMeaning, getSign, getMeanings, **getImageAbsolutePath**), `db.ts` (better-sqlite3 readonly singleton). Used by seed and the image route only. |
+| `pk/` | `PkInvite/PkMatch/PkDailyXp` 实时主题对战 v1 | `service.ts` (createInvite/listInbox/respondInvite/getRecentMatches), `matchEngine.ts` (pure reducer applyAction + determineWinner), `matchStore.ts` (in-process Map + SSE broadcaster + timers), `questionBank.ts` (从 signDb 抽 15 题), `modes.ts` (casual/timed/hell scoreAnswer), `awardXp.ts` (胜 20 / 负 15 / 平 10 + 每日封顶 3). |
 | `progress/` | `Attempt/LessonClear/DailyStat`, streak + XP + leaves on User | `service.ts` (**onLessonClear**, **onReviewClear**, getUserProgress, getWeeklyLeaders), `streak.ts` (computeStreak pure fn), `dailyQuest.ts` (computeDailyQuest pure + claimDailyQuestIfEligible wrapper) |
 | `badges/` | `Badge/UserBadge` | `defs.ts` (5 badges), `rules.ts` (evaluateBadgeRules pure fn), `service.ts` (awardBadges, getUserBadges). **UI currently hidden** but logic still grants silently. |
 | `social/` | `Friendship` | `service.ts` (canonical-pair friendships), `challenge.ts` (PK star comparison) |
@@ -135,14 +136,42 @@ Consequence: **lessons always finish at correct == total**. `lessonStars` theref
 
 The `/review` page uses the same `QuestionCard` + `advanceQueue` pattern. Test-only route `GET /api/test/lesson-answers?lessonId=…` reveals `answerIndex` per question for Playwright; it 404s when `NODE_ENV=production`.
 
-## Bottom-tab IA
+## 知识竞赛 · 主题实时 PK（v1）
+
+`/pk` Hub 上选 **主题（常用语 / 数字 / 身体）+ 规则（休闲 / 限时 / 地狱）+ 好友** 即可发起 1v1 实时对战；被邀请方在自己 `/pk` 页面通过 2.5s 轮询的收件箱看到挑战，接受后双方跳到 `/pk/match/[matchId]`，经 3 秒倒计时同步开始 15 道题。
+
+### 模式（`src/lib/pk/modes.ts`）
+- `casual`：不计时；答对 +1，答错 -1。
+- `timed`：用户在 30/60/90s 中选总时长；同 +1/-1，全局到点强制结算。
+- `hell`：每题硬限时 5s；3s 内答对 +10，3-5s 内答对 +5，错或超时 0；不存在 -1。
+
+### 通信（无 socket.io / 无 custom server）
+按 Next 16 docs `01-app/02-guides/streaming.md` §"Streaming in Route Handlers" 的指引：服务端→客户端用 **SSE**（`Response(ReadableStream, { 'Content-Type': 'text/event-stream' })`），客户端→服务端用普通 `POST`。对局状态（含订阅者集 + timers）放在 `matchStore.ts` 的 in-process `Map`，与 better-sqlite3 单进程前提一致。重启会丢进行中对局；终结对局已写 PkMatch。
+
+### 关键路由
+- `POST /api/pk/invite` 创建挑战（60s TTL，校验好友关系，避免重复 pending）。
+- `POST /api/pk/invite/respond` 接受时事务地建 `PkMatch`（含 `questionsJson`）+ `spawnMatch` 启动对局。
+- `GET /api/pk/invite/{inbox,status}` 收件箱 + inviter 端轮询。
+- `GET /api/pk/match/[id]/state` 快照（重连用）。
+- `GET /api/pk/match/[id]/events` SSE 主通道，event names: `state` / `countdown` / `question` / `answered` / `finished`。
+- `POST /api/pk/match/[id]/answer` 提交（服务端用 `Date.now() - state.questionStartedAt` 计 msSpent，不信前端）。
+- `POST /api/pk/match/[id]/quit` 主动弃权 → 对手判胜。
+- `GET /api/pk/match/[id]/answer-key` test-only（NODE_ENV !== production），仅供 Playwright 双上下文跑 happy path。
+
+### XP 奖励（`src/lib/pk/awardXp.ts`）
+对局结束时由 `spawnMatch` 的 `onFinished` 回调触发：胜 +20 / 负 +15 / 平 +10。每用户每日**前 3 场计入 XP**（`PkDailyXp.count` 原子 ++ 封顶 3，更多场仅记入 `PkMatch`）。**不走 `progress.onLessonClear`** —— PK 是平行轨道，不污染 streak / leaves / 每日任务 / 团队加成。XP 直接写入 `User.totalXp` + `User.weeklyXp` + 同日 `DailyStat.xp`（不触发 daily quest 评估）。幂等基于 `PkMatch.endedAt` 作锁。
+
+### UI 测试 ID（必须保留或同步更新 e2e）
+`pk-theme-{常用语|数字|身体}` · `pk-mode-{casual|timed|hell}` · `pk-friend-select` · `pk-send-invite` · `invite-{accept|decline}` · `duel-countdown` · `duel-question` · `duel-choice-N` · `duel-score-{self|opponent}` · `duel-deadline` · `duel-finished` · `duel-xp-gain`
+
+
 
 Single-page-app feel via `BottomNav.tsx` (auto-hides on `/login`, `/register`):
 
 | Tab | Routes |
 |---|---|
 | 主线 | `/`, `/learn/*`, `/mistakes`, `/review` |
-| 知识竞赛 | `/pk`, `/pk/[lessonId]/[code]`, `/leaderboard` |
+| 知识竞赛 | `/pk`, `/pk/match/[matchId]`, `/leaderboard` |
 | 个人 | `/me`, `/badges`, `/friends`, `/teams`, `/teams/*`, `/profile/[code]` |
 
 `/me` is the user's own hub; `/profile/[code]` is the public-facing version (works for self/friend/stranger/guest).
@@ -158,14 +187,14 @@ Single-page-app feel via `BottomNav.tsx` (auto-hides on `/login`, `/register`):
 
 ## Testing notes
 
-- **Vitest** unit tests in `tests/unit/`, all pure functions (~60 cases across 9 files): `auth.password`, `auth.jwt`, `scoring` (lessonXp / **lessonStars=过关即 3 星** / lessonLeaves / reviewLeaves), `streak`, `badges`, `dailyQuest`, `teamBonus`, `lessonQueue` (advanceQueue/correctCount), `signDb.service` (smoke against `sign_themed.db`). The vitest config injects fake `JWT_SECRET` + `DATABASE_URL` so `env()` doesn't throw.
-- **Playwright** e2e at `tests/e2e/happy-path.spec.ts` uses `data-testid` selectors (`register-submit`, `lesson-link`, `choice-N`, `answer-feedback`, `next-question`, `lesson-complete`, `xp-gain`, `leaves-gain`, `question-image`). Determinism comes from `GET /api/test/lesson-answers?lessonId=…` (test-only) — clicks `choice-${correctIndex}` on each question, never relies on a fixed answerIndex.
+- **Vitest** unit tests in `tests/unit/`, all pure functions (~84 cases across 12 files): `auth.password`, `auth.jwt`, `scoring`, `streak`, `badges`, `dailyQuest`, `teamBonus`, `lessonQueue`, `signDb.service`, **`pk.modes`**, **`pk.matchEngine`**, **`pk.questionBank`**.
+- **Playwright** e2e: `happy-path.spec.ts` (single-user lesson clear) + **`pk-duel.spec.ts`** (双 BrowserContext: A 注册 → B 注册 → A 加 B → A 发起常用语+休闲挑战 → B 接受 → 双方同步答 15 题 → 双方 `duel-finished`). Determinism 依赖 test-only 路由 `/api/test/lesson-answers`（学习关）和 `/api/pk/match/[id]/answer-key`（PK），生产 404。
 - The seed shuffles per-question choices using a deterministic PRNG (`SEED_SEED` env, default 42). `answerIndex` is no longer correlated with question order.
 
 ## Known placeholders
 
 - `public/signs/*.{jpg,png}` — 12 legacy occupancy images, **no longer referenced** by any code or test. Safe to delete; left in tree only as a pre-database baseline.
-- Async PK is star-based comparison only; real-time WebSocket PK is W3-deferred.
+- Async PK 已下线 —— `/pk/[lessonId]/[code]` 路由删除；`src/lib/social/challenge.ts` 仍保留为死代码，下次清理一起删。
 - Tier weekly settlement cron is not wired — `User.weeklyXp` accumulates but no scheduled job promotes/demotes.
 - Leaves currency (`User.leaves`) has no spend mechanism yet — earned only, displayed in `/me` chip + CompletionScreen Stat. Planned: shop / cosmetic unlocks.
 - Badges are awarded silently in `awardBadges` but **UI is hidden by user request** (`/me` Section, `/profile/[code]` collection block, CompletionScreen reveal — all removed). The `/badges` page route still exists; nothing links to it.
