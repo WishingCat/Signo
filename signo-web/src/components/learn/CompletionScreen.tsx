@@ -65,6 +65,12 @@ export function CompletionScreen({
             {streakMsg}
           </p>
         )}
+        {result.dailyQuest.event === 'just-crossed' && (
+          <p className="mt-2 text-[13px] text-moss font-medium inline-flex items-center gap-1">
+            <LeafCoin iconOnly size={16} />
+            <span>每日任务达成 · +{result.dailyQuest.bonusXp} XP · +{result.dailyQuest.bonusLeaves} 落叶</span>
+          </p>
+        )}
       </div>
 
       <Card tilt="right" density="loose" className="mx-2">

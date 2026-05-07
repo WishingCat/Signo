@@ -43,6 +43,13 @@ export const ClearLessonResult = z.object({
     lastClearDate: z.string(),
     event: z.enum(['continued', 'reset', 'started', 'same-day']),
   }),
+  dailyQuest: z.object({
+    event: z.enum(['already-claimed', 'not-yet', 'just-crossed']),
+    bonusXp: z.number().int(),
+    bonusLeaves: z.number().int(),
+    todayXp: z.number().int(),
+    threshold: z.number().int(),
+  }),
   badgesEarned: z.array(z.object({
     slug: z.string(),
     title: z.string(),

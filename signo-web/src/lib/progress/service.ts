@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { lessonXp, lessonStars, lessonLeaves, reviewLeaves } from '@/lib/curriculum/scoring'
 import { bumpStreakOnClear } from './streak'
+import { claimDailyQuestIfEligible } from './dailyQuest'
 import { awardBadges } from '@/lib/badges/service'
 import type { ClearResult, GradedAnswer, OnLessonClearArgs } from './types'
 
@@ -35,13 +36,30 @@ export async function onLessonClear(
   })
 
   const today = todayIsoDate()
+
+  // 读 upsert 前的 DailyStat 作为"今日 quest 是否已领 + previousXp"判定依据
+  const prevStat = await prisma.dailyStat.findUnique({
+    where: { userId_date: { userId, date: today } },
+  })
+  const previousTodayXp = prevStat?.xp ?? 0
+  const alreadyClaimed = !!prevStat?.dailyQuestClaimedAt
+
   await prisma.dailyStat.upsert({
     where: { userId_date: { userId, date: today } },
     create: { userId, date: today, xp, leaves: leavesEarned, lessonsCleared: 1 },
     update: { xp: { increment: xp }, leaves: { increment: leavesEarned }, lessonsCleared: { increment: 1 } },
   })
 
-  // 更新用户总 XP / 周 XP / 落叶
+  // 每日任务结算（若触发，wrapper 内部会再追加 bonus 到 DailyStat + User）
+  const dailyQuest = await claimDailyQuestIfEligible({
+    userId,
+    today,
+    previousXp: previousTodayXp,
+    newXp: previousTodayXp + xp,
+    alreadyClaimed,
+  })
+
+  // 最后再统一更新 User（lesson 本身的 XP + 落叶；bonus 已在 claim 内写过）
   const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: {
@@ -74,6 +92,7 @@ export async function onLessonClear(
     totalXp: updatedUser.totalXp,
     leavesEarned,
     totalLeaves: updatedUser.leaves,
+    dailyQuest,
     badgesEarned,
   }
 }
@@ -108,10 +127,25 @@ export async function onReviewClear(args: {
   const leavesEarned = reviewLeaves({ total, correct })
 
   const today = todayIsoDate()
+
+  const prevStat = await prisma.dailyStat.findUnique({
+    where: { userId_date: { userId, date: today } },
+  })
+  const previousTodayXp = prevStat?.xp ?? 0
+  const alreadyClaimed = !!prevStat?.dailyQuestClaimedAt
+
   await prisma.dailyStat.upsert({
     where: { userId_date: { userId, date: today } },
     create: { userId, date: today, xp, leaves: leavesEarned, lessonsCleared: 0 },
     update: { xp: { increment: xp }, leaves: { increment: leavesEarned } },
+  })
+
+  const dailyQuest = await claimDailyQuestIfEligible({
+    userId,
+    today,
+    previousXp: previousTodayXp,
+    newXp: previousTodayXp + xp,
+    alreadyClaimed,
   })
 
   const updated = await prisma.user.update({
@@ -135,7 +169,7 @@ export async function onReviewClear(args: {
     isLessonPerfect: false,
   })
 
-  return { xp, correct, total, stars, streak, totalXp: updated.totalXp, leavesEarned, totalLeaves: updated.leaves, badgesEarned }
+  return { xp, correct, total, stars, streak, totalXp: updated.totalXp, leavesEarned, totalLeaves: updated.leaves, dailyQuest, badgesEarned }
 }
 
 export async function getTodayXp(userId: string): Promise<number> {

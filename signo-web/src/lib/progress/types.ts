@@ -1,4 +1,5 @@
 import type { StreakDelta } from './streak'
+import type { DailyQuestDelta } from './dailyQuest'
 import type { EarnedBadge } from '@/lib/badges/service'
 
 export type GradedAnswer = {
@@ -19,6 +20,8 @@ export type ClearResult = {
   leavesEarned: number
   /** 写入后用户的落叶余额 */
   totalLeaves: number
+  /** 每日任务判定与奖励（always present after hook runs） */
+  dailyQuest: DailyQuestDelta
   badgesEarned?: EarnedBadge[]
 }
 
