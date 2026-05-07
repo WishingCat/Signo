@@ -70,13 +70,14 @@ src/lib/db.ts           ← Single PrismaClient, with better-sqlite3 driver adap
 |---|---|---|
 | `auth/` | `User`, sessions | `service.ts` (registerUser/authenticateUser), `session.ts` (getSessionUser via cookie) |
 | `curriculum/` | `Unit/Lesson/Question/Media` | `service.ts` (getLessonTree, getQuestionsForLesson, getRecentMistakes, getReviewSet, gradeAnswer) |
-| `progress/` | `Attempt/LessonClear/DailyStat`, streak fields on User | `service.ts` (**onLessonClear**, **onReviewClear**, getUserProgress, getWeeklyLeaders), `streak.ts` (computeStreak pure fn) |
-| `badges/` | `Badge/UserBadge` | `defs.ts` (5 badges), `rules.ts` (evaluateBadgeRules pure fn), `service.ts` (awardBadges, getUserBadges) |
+| `progress/` | `Attempt/LessonClear/DailyStat`, streak + XP + leaves on User | `service.ts` (**onLessonClear**, **onReviewClear**, getUserProgress, getWeeklyLeaders), `streak.ts` (computeStreak pure fn), `dailyQuest.ts` (computeDailyQuest pure + claimDailyQuestIfEligible wrapper) |
+| `badges/` | `Badge/UserBadge` | `defs.ts` (5 badges), `rules.ts` (evaluateBadgeRules pure fn), `service.ts` (awardBadges, getUserBadges). **UI currently hidden** but logic still grants silently. |
 | `social/` | `Friendship` | `service.ts` (canonical-pair friendships), `challenge.ts` (PK star comparison) |
+| `teams/` | `Team/TeamMember/TeamInvite/TeamBonusEvent` | `service.ts` (createTeam/inviteByFriendCode/respondInvite/leaveTeam/listMyTeams/getTeam), `bonus.ts` (teamBonusBps + computeBonusXp pure fns + settleTeamBonusesForUser wrapper) |
 | `env.ts` | zod-validated env vars | call `env()` to get `{DATABASE_URL, JWT_SECRET, NODE_ENV}` |
 | `logger.ts` | pino instance | use `logger.error({ err }, '...')` in routes |
 
-Cross-domain dependencies are explicit and limited: `progress.onLessonClear` calls `badges.awardBadges` because clearing a lesson is the canonical badge-evaluation event. Don't add new cross-domain imports without thinking.
+Cross-domain hooks (intentional): `progress.onLessonClear` calls `dailyQuest.claimDailyQuestIfEligible` → `teams.settleTeamBonusesForUser` → `badges.awardBadges`. All four writes happen inside the same hook; think twice before adding a 5th cross-domain call.
 
 ### Shared zod schemas (`*.schema.ts`)
 
@@ -85,14 +86,23 @@ Front-end and API import the **same** zod object + inferred type. Don't redefine
 - `lib/auth/auth.schema.ts` — `RegisterInput`, `LoginInput`
 - `lib/curriculum/learn.schema.ts` — `ClearLessonInput`, `ClearReviewInput`, `ClearLessonResult`
 - `lib/social/friends.schema.ts` — `AddFriendInput`
+- `lib/teams/team.schema.ts` — `CreateTeamInput`, `InviteByCodeInput`, `RespondInviteInput`
 
 ### Extension hooks (the meaningful ones)
 
-- **`progress.onLessonClear({userId, lessonId, graded, totalInLesson})`** — the central post-clear hook. Currently writes Attempts → LessonClear → DailyStat → User XP/streak → badges. To add post-clear behavior (e.g. tier promotion, weekly settlement), append here.
-- **`progress.onReviewClear({userId, graded})`** — same shape but no LessonClear (review isn't a formal pass), XP scaled lower (`correct*2 + 3` instead of base 10).
-- **`evaluateBadgeRules(ctx)` in `lib/badges/rules.ts`** — pure function, returns slugs to award. New badge = add definition to `defs.ts` + add one `if` to `evaluateBadgeRules`. Tested in isolation.
-- **`Question.type`** discriminator — `'sign2word'` (image prompt → text choices) or `'word2sign'` (text prompt → image choices). `QuestionCard` switches rendering based on this. To add a new question type, extend the union and add a render branch.
-- **`curriculum.getQuestionsForLesson()` always strips `answerIndex`** — answers are graded server-side via `gradeAnswer()` or `getQuestionsMapForLesson()`. The DTO sent to clients does not include the answer.
+- **`progress.onLessonClear({userId, lessonId, graded, totalInLesson})`** — the central post-clear hook. Currently writes Attempts → LessonClear → DailyStat (xp + leaves) → daily-quest claim (if ≥100 today) → team-bonus settlement (if dailyQuest just-crossed) → User XP/leaves → streak → badges. To add post-clear behavior (e.g. tier promotion, weekly settlement), append here.
+- **`progress.onReviewClear({userId, graded})`** — same hook shape but no LessonClear (review isn't a formal pass), XP scaled lower (`correct*2 + 3`), reviewLeaves = correct + perfect-bonus.
+- **`dailyQuest.computeDailyQuest(...)`** + **`claimDailyQuestIfEligible(...)`** — daily-XP threshold (100) bonus. Pure fn + DB wrapper. Idempotent via `DailyStat.dailyQuestClaimedAt`.
+- **`teams.teamBonusBps(memberCount)`** + **`settleTeamBonusesForUser(userId, today)`** — team-bonus settlement. Idempotent via `TeamBonusEvent @@unique([teamId, date])`. Triggered only when daily quest just crossed; credits all members per their day XP × bps/10000.
+- **`evaluateBadgeRules(ctx)` in `lib/badges/rules.ts`** — pure function, returns slugs to award. New badge = add definition to `defs.ts` + add one `if` to `evaluateBadgeRules`.
+- **`Question.type`** discriminator — `'sign2word'` (image prompt → text choices) or `'word2sign'` (text prompt → image choices). `QuestionCard` switches rendering based on this.
+- **`curriculum.getQuestionsForLesson()` always strips `answerIndex`** — answers are graded server-side via `gradeAnswer()` or `getQuestionsMapForLesson()`.
+
+### Configuration constants
+
+- `src/config/scoring.ts` — XP & star thresholds (`BASE_XP=10`, `PERFECT_BONUS=5`, star ratios)
+- `src/config/economy.ts` — leaves & daily-quest values (`LEAVES_PER_LESSON=5`, `DAILY_QUEST_THRESHOLD=100`, bonuses)
+- Team bonus basis points are inline constants in `lib/teams/bonus.ts` (2→1900, 3→2000, 4→2100)
 
 ## Bottom-tab IA
 
@@ -102,7 +112,7 @@ Single-page-app feel via `BottomNav.tsx` (auto-hides on `/login`, `/register`):
 |---|---|
 | 主线 | `/`, `/learn/*`, `/mistakes`, `/review` |
 | 知识竞赛 | `/pk`, `/pk/[lessonId]/[code]`, `/leaderboard` |
-| 个人 | `/me`, `/badges`, `/friends`, `/profile/[code]` |
+| 个人 | `/me`, `/badges`, `/friends`, `/teams`, `/teams/*`, `/profile/[code]` |
 
 `/me` is the user's own hub; `/profile/[code]` is the public-facing version (works for self/friend/stranger/guest).
 

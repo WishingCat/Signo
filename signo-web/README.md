@@ -41,9 +41,9 @@ pnpm e2e                            # Playwright happy-path 烟测
 底部 3 Tab 导航（`/login` `/register` 之外的所有页面）：
 
 ### Tab 1 · 主线
-- 🌱 **/** 首页：今日仪表盘 + 错题本/复习快捷入口 + 课程树（林间小径视觉）
+- 🌱 **/** 首页：每日任务进度条 + 错题本/复习快捷入口 + 森林闯关流程图（蜿蜒路径 + 小动物 / 蘑菇 / 蕨叶 / 浆果装饰）
 - 📚 **/learn/[lessonId]** 答题：拍立得风格卡片 + 4 选 1，支持 **sign2word**（看手语选词）和 **word2sign**（看词选手语）两种题型
-- ✨ 完成页：3 星绽放 + 飘落叶子 + 萤火虫 + 连胜反馈 + 新徽章胶囊
+- ✨ 完成页：3 星绽放 + 飘落叶子 + 萤火虫 + 连胜反馈 + 每日任务奖励 + 团队加成横幅
 - 📓 **/mistakes** 错题本：按最近错误时间排序，展示所在关卡与错误次数
 - 🧺 **/review** 今日复习：抽你最近 6 道错题组复习关，XP 略低于正课
 
@@ -53,22 +53,26 @@ pnpm e2e                            # Playwright happy-path 烟测
 - 🎯 **/pk/[lessonId]/[friendCode]** 异步 PK：基于双方最近通关星级判定胜负
 
 ### Tab 3 · 个人
-- 👤 **/me** 个人中心：段位小动物 + 6 格统计（今日/累计/本周/连胜/最长/通关）+ 徽章 strip + 林友前 3 + 退出登录
-- 🏅 **/badges** 徽章馆：5 枚首批徽章（第一片叶子 / 三叶齐光 / 三日不辍 / 百叶入怀 / 拾叶者）双态展示
+- 👤 **/me** 个人中心：段位小动物 + 好友码 + 落叶余额 chip + 6 格统计（今日/累计/本周/连胜/最长/通关）+ 团队协作 Section + 林友前 3 + 退出登录
 - 🧑‍🤝‍🧑 **/friends** 林友：好友码 + 加好友表单 + 林友列表
+- 🤝 **/teams** 团队协作：2-4 人组队，全员当日完成每日任务触发 XP 加成
 - 🪪 **/profile/[code]** 公开主页：对 self/friend/stranger/guest 四态按钮
 
 ### 进度 / 游戏化（系统层）
 - 🔥 **连胜**：同日不累加、连续天 +1、断掉重置；最长连胜独立记录
 - 📊 **XP 三种统计**：今日（DailyStat）/ 累计（User.totalXp）/ 本周（User.weeklyXp）
-- 🏷️ **徽章自动评估**：每次通关 / 复习后调用 evaluateBadgeRules，按规则颁发并通过 @@unique 防重
+- 🍂 **落叶货币**：通关 5 落叶 + 全对 +5；复习每对 +1 + 全对 +2；暂只显示不消费，配 LeafCoin SVG
+- ✅ **每日任务**：当日 XP ≥ 100 自动领 +20 XP + 50 落叶，DailyStat 级幂等
+- 🤝 **团队加成**：2 人 +19% / 3 人 +20% / 4 人 +21%，全员当日都完成每日任务时触发，
+  TeamBonusEvent @@unique([teamId, date]) 保证同队伍同日只结算一次，每位成员按各自当日 XP × 基点获得 bonus
 
 ### 森林视觉系统
-- 🎨 **设计令牌**：Tailwind 4 CSS-first `@theme` 定义 oat / cream / moss / sage / hazel / mist / ochre / bark / ink / firefly
+- 🎨 **设计令牌**：Tailwind 4 CSS-first `@theme` 定义 oat / cream / moss / sage / hazel(leaf-green) / mist / ochre / bark / ink / firefly
 - ✍️ **字体**：HarmonyOS Sans SC（Regular / Medium / Bold，通过 jsDelivr webfont splitted 载入，清晰易读）
 - 🌿 **7 只手绘小动物**：L1 小蚂蚁 / L2 萤火虫 / L3 小松鼠 / L4 狐狸 / L5 考拉 / L6 大野猪 / L7 麋鹿神（纯 SVG，可通过 `<Mascot name="fox" />` 复用）
-- 🔮 **环境氛围**：页脚爬行的蚂蚁队列、屏角常驻脉动萤火虫、水彩晕染 + SVG 纸张颗粒背景、手绘墨迹分割线
+- 🔮 **林间光斑**：左右两道暖光柱 + 5 只脉动萤火虫 + 底栏前森林地面（苔藓 + 鹅卵石 + 蕨叶 + 蘑菇丛）
 - 📄 **纸张质感**：`.paper` 类提供内阴影 + 纤维噪点的纸张卡片，`<Card tape tilt="left">` 可加胶带与倾斜
+- 🌸 **森林元素**：蘑菇（红/金/丛）、蕨叶、藤蔓、浆果、落叶币分布在页面角落与路径两侧
 
 ---
 

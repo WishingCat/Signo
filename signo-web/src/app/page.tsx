@@ -2,20 +2,33 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getLessonTree } from '@/lib/curriculum/service'
 import { getSessionUser } from '@/lib/auth/session'
-import { getLessonProgressMap } from '@/lib/progress/service'
+import { getLessonProgressMap, getUserProgress } from '@/lib/progress/service'
+import { ECONOMY } from '@/config/economy'
 import { Mascot } from '@/components/forest/Mascot'
 import { Leaf } from '@/components/forest/Leaf'
 import { Fern } from '@/components/forest/Fern'
 import { Berry } from '@/components/forest/Berry'
 import { Mushroom } from '@/components/forest/Mushroom'
 import { ForestPath } from '@/components/forest/ForestPath'
+import { DailyQuestBanner } from '@/components/home/DailyQuestBanner'
 
 export default async function Home() {
   const [tree, user] = await Promise.all([getLessonTree(), getSessionUser()])
   const progress = user ? await getLessonProgressMap(user.id) : {}
+  const userProgress = user ? await getUserProgress(user.id) : null
 
   return (
     <div className="py-6 space-y-5 bloom-in">
+      {user && userProgress && (
+        <DailyQuestBanner
+          todayXp={userProgress.todayXp}
+          threshold={ECONOMY.DAILY_QUEST_THRESHOLD}
+          alreadyClaimed={userProgress.dailyQuestClaimed}
+          bonusXp={ECONOMY.DAILY_QUEST_BONUS_XP}
+          bonusLeaves={ECONOMY.DAILY_QUEST_BONUS_LEAVES}
+        />
+      )}
+
       {user ? <QuickActions /> : <GuestInvite />}
 
       <PathHeading />

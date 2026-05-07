@@ -199,6 +199,8 @@ export type UserProgressSummary = {
   bestStreak: number
   tier: number
   lessonsClearedTotal: number
+  /** 今日是否已领取每日任务奖励 */
+  dailyQuestClaimed: boolean
 }
 
 export async function getUserProgress(userId: string): Promise<UserProgressSummary> {
@@ -229,6 +231,7 @@ export async function getUserProgress(userId: string): Promise<UserProgressSumma
     bestStreak: u.bestStreak,
     tier: u.tier,
     lessonsClearedTotal: clearsCount,
+    dailyQuestClaimed: !!todayStat?.dailyQuestClaimedAt,
   }
 }
 
