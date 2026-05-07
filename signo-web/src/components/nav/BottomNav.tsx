@@ -34,6 +34,8 @@ const TABS: Tab[] = [
       p === '/me' ||
       p === '/badges' ||
       p === '/friends' ||
+      p === '/teams' ||
+      p.startsWith('/teams/') ||
       p.startsWith('/profile'),
     icon: <IconUser />,
   },

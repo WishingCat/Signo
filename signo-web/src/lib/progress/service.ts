@@ -3,6 +3,7 @@ import { lessonXp, lessonStars, lessonLeaves, reviewLeaves } from '@/lib/curricu
 import { bumpStreakOnClear } from './streak'
 import { claimDailyQuestIfEligible } from './dailyQuest'
 import { awardBadges } from '@/lib/badges/service'
+import { settleTeamBonusesForUser } from '@/lib/teams/bonus'
 import type { ClearResult, GradedAnswer, OnLessonClearArgs } from './types'
 
 /**
@@ -59,6 +60,11 @@ export async function onLessonClear(
     alreadyClaimed,
   })
 
+  // 若本次触发了每日任务 → 尝试为所属队伍结算团队加成（若全员都完成且今日未结算）
+  const teamBonuses = dailyQuest.event === 'just-crossed'
+    ? await settleTeamBonusesForUser(userId, today)
+    : []
+
   // 最后再统一更新 User（lesson 本身的 XP + 落叶；bonus 已在 claim 内写过）
   const updatedUser = await prisma.user.update({
     where: { id: userId },
@@ -93,6 +99,7 @@ export async function onLessonClear(
     leavesEarned,
     totalLeaves: updatedUser.leaves,
     dailyQuest,
+    teamBonuses,
     badgesEarned,
   }
 }
@@ -148,6 +155,10 @@ export async function onReviewClear(args: {
     alreadyClaimed,
   })
 
+  const teamBonuses = dailyQuest.event === 'just-crossed'
+    ? await settleTeamBonusesForUser(userId, today)
+    : []
+
   const updated = await prisma.user.update({
     where: { id: userId },
     data: {
@@ -169,7 +180,7 @@ export async function onReviewClear(args: {
     isLessonPerfect: false,
   })
 
-  return { xp, correct, total, stars, streak, totalXp: updated.totalXp, leavesEarned, totalLeaves: updated.leaves, dailyQuest, badgesEarned }
+  return { xp, correct, total, stars, streak, totalXp: updated.totalXp, leavesEarned, totalLeaves: updated.leaves, dailyQuest, teamBonuses, badgesEarned }
 }
 
 export async function getTodayXp(userId: string): Promise<number> {

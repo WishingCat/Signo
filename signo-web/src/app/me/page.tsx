@@ -11,14 +11,17 @@ import { Berry } from '@/components/forest/Berry'
 import { getSessionUser } from '@/lib/auth/session'
 import { getUserProgress } from '@/lib/progress/service'
 import { listFriends } from '@/lib/social/service'
+import { listMyTeams } from '@/lib/teams/service'
+import { cn } from '@/lib/utils'
 
 export default async function MePage() {
   const user = await getSessionUser()
   if (!user) redirect('/login')
 
-  const [progress, friends] = await Promise.all([
+  const [progress, friends, teams] = await Promise.all([
     getUserProgress(user.id),
     listFriends(user.id),
+    listMyTeams(user.id),
   ])
 
   const mascot = TIER_MASCOT[Math.min(Math.max(progress.tier, 1), 7)]
@@ -69,6 +72,46 @@ export default async function MePage() {
           <Stat label="通关" value={progress.lessonsClearedTotal.toString()} unit="次" />
         </div>
       </Card>
+
+      <Section
+        title="团队协作"
+        hint={`${teams.length} 支`}
+        href="/teams"
+        hrefLabel="管理团队 →"
+      >
+        {teams.length === 0 ? (
+          <Card density="tight" className="text-center py-3">
+            <p className="text-[13px] text-bark/70 mb-2">
+              组 2–4 人小队，全员完成每日任务，全员 XP +19~21% 加成。
+            </p>
+            <Link href="/teams/new" className="inline-block">
+              <Button size="sm">创建第一个队伍 →</Button>
+            </Link>
+          </Card>
+        ) : (
+          <ul className="space-y-2">
+            {teams.slice(0, 2).map((t) => (
+              <li key={t.id}>
+                <Link
+                  href={`/teams/${t.id}`}
+                  className="group block rounded-[14px] px-3 py-2 bg-cream/70 hover:bg-cream hover:-translate-y-[1px] transition-all border border-bark/10"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[14px] text-ink font-medium truncate flex-1">{t.name}</span>
+                    <span className={cn(
+                      'text-[10px] tracking-[0.2em] uppercase shrink-0',
+                      t.bonusSettledToday ? 'text-moss' : 'text-bark/50',
+                    )}>
+                      {t.bonusSettledToday ? '今日 ✓' : `${t.todayCompletedCount}/${t.memberCount}`}
+                    </span>
+                    <span className="text-[12px] text-hazel">→</span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
 
       <Section
         title="林友"

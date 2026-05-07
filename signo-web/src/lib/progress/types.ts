@@ -1,6 +1,7 @@
 import type { StreakDelta } from './streak'
 import type { DailyQuestDelta } from './dailyQuest'
 import type { EarnedBadge } from '@/lib/badges/service'
+import type { TeamBonusGrant } from '@/lib/teams/types'
 
 export type GradedAnswer = {
   questionId: string
@@ -16,12 +17,11 @@ export type ClearResult = {
   stars: 1 | 2 | 3
   streak: StreakDelta
   totalXp: number
-  /** 本次结算获得的落叶（lessonLeaves / reviewLeaves） */
   leavesEarned: number
-  /** 写入后用户的落叶余额 */
   totalLeaves: number
-  /** 每日任务判定与奖励（always present after hook runs） */
   dailyQuest: DailyQuestDelta
+  /** 本次结算触发的团队加成列表（调用者视角 XP credited） */
+  teamBonuses: TeamBonusGrant[]
   badgesEarned?: EarnedBadge[]
 }
 

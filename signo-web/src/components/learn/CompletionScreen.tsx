@@ -71,6 +71,16 @@ export function CompletionScreen({
             <span>每日任务达成 · +{result.dailyQuest.bonusXp} XP · +{result.dailyQuest.bonusLeaves} 落叶</span>
           </p>
         )}
+        {result.teamBonuses && result.teamBonuses.length > 0 && (
+          <div className="mt-2 space-y-1">
+            {result.teamBonuses.map((tb) => (
+              <p key={tb.teamId} className="text-[13px] text-hazel font-medium">
+                <span className="inline-block align-middle mr-1">🌿</span>
+                《{tb.teamName}》全员达成 · +{tb.pctBps / 100}% · 你 +{tb.xpCredited} XP
+              </p>
+            ))}
+          </div>
+        )}
       </div>
 
       <Card tilt="right" density="loose" className="mx-2">

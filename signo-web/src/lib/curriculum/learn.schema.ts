@@ -50,6 +50,13 @@ export const ClearLessonResult = z.object({
     todayXp: z.number().int(),
     threshold: z.number().int(),
   }),
+  teamBonuses: z.array(z.object({
+    teamId: z.string(),
+    teamName: z.string(),
+    pctBps: z.number().int(),
+    xpCredited: z.number().int(),
+    memberCount: z.number().int(),
+  })),
   badgesEarned: z.array(z.object({
     slug: z.string(),
     title: z.string(),
